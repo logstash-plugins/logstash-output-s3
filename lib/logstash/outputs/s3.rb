@@ -112,10 +112,10 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # Specify how many workers to use to upload the files to S3
   config :upload_workers_count, :validate => :number, :default => 1
 
-
   # Exposed attributes for testing purpose.
   attr_accessor :tempfile
   attr_reader :page_counter
+  attr_reader :s3
 
   def aws_s3_config
     @logger.info("Registering s3 output", :bucket => @bucket, :endpoint_region => @region)
@@ -233,7 +233,6 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       when LogStash::ShutdownEvent
         @logger.debug("S3: upload worker is shutting down gracefuly")
         @upload_queue.enq(LogStash::ShutdownEvent)
-        break
       else
         @logger.debug("S3: upload working is uploading a new file", :filename => File.basename(file))
         move_file_to_bucket(file)
@@ -263,8 +262,26 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
     begin
       write_on_bucket(test_filename)
+      delete_on_bucket(test_filename)
     ensure
       File.delete(test_filename)
+    end
+  end
+  
+  def delete_on_bucket(filename)
+    bucket = @s3.buckets[@bucket]
+
+    remote_filename = "#{@prefix}#{File.basename(filename)}"
+
+    @logger.debug("S3: delete file from bucket", :remote_filename => remote_filename, :bucket => @bucket)
+
+    begin
+      # prepare for write the file
+      object = bucket.objects[remote_filename]
+      object.delete
+    rescue AWS::Errors::Base => e
+      @logger.error("S3: AWS error", :error => e)
+      raise LogStash::ConfigurationError, "AWS Configuration Error"
     end
   end
 
@@ -306,16 +323,11 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     @periodic_upload_thread = Thread.new do
       LogStash::Util::set_thread_name("<S3 periodic uploader")
 
-      first_interval = true
-      Stud.interval(@time_file * 60) do
-        if first_interval == false
-          @logger.debug("S3: time_file triggered, bucketing the file")
+      Stud.interval(@time_file * 60, :sleep_then_run => true) do
+        @logger.debug("S3: time_file triggered, bucketing the file")
 
-          move_file_to_bucket_async(@tempfile.path)
-          create_temporary_file
-        else
-          first_interval = false
-        end
+        move_file_to_bucket_async(@tempfile.path)
+        create_temporary_file
       end
     end
   end
