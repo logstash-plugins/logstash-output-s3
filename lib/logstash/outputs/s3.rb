@@ -160,7 +160,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # This method is used for create new empty temporary files for use. Flag is needed for indicate new subsection time_file.
   public
   def create_temporary_file
-    filename = get_temporary_filename(@page_counter)
+    filename = File.join(@temporary_directory, get_temporary_filename(@page_counter))
 
     @logger.debug("S3: Creating a new temporary file", :filename => filename)
 
@@ -338,9 +338,9 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     filename = "ls.s3.#{Socket.gethostname}.#{current_time.strftime("%Y-%m-%dT%H.%M")}"
 
     if @tags.size > 0
-      return File.join(@temporary_directory, "#{filename}.tag_#{@tags.join('.')}.part#{page_counter}.#{TEMPFILE_EXTENSION}")
+      return "#{filename}.tag_#{@tags.join('.')}.part#{page_counter}.#{TEMPFILE_EXTENSION}"
     else
-      return File.join(@temporary_directory, "#{filename}.part#{page_counter}.#{TEMPFILE_EXTENSION}")
+      return "#{filename}.part#{page_counter}.#{TEMPFILE_EXTENSION}"
     end
   end
 
