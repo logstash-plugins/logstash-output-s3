@@ -180,7 +180,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     # http://ruby.awsblog.com/post/Tx16QY1CI5GVBFT/Threading-with-the-AWS-SDK-for-Ruby
     AWS.eager_autoload!(AWS::S3)
 
-    workers_not_supported
+    workers_not_supported()
 
     @s3 = aws_s3_config
     @upload_queue = Queue.new
@@ -213,7 +213,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     @logger.debug("S3: Configure upload workers")
 
     @upload_workers = @upload_workers_count.times.map do |worker_id|
-      Thread.new do
+      Stud::Task.new do
         LogStash::Util::set_thread_name("<S3 upload worker #{worker_id}")
 
         while true do
@@ -319,15 +319,15 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   end
 
   public
-  def configure_periodic_uploader
-    @periodic_upload_thread = Thread.new do
+  def configure_periodic_rotation
+    @periodic_rotation_thread = Stud::Task.new do
       LogStash::Util::set_thread_name("<S3 periodic uploader")
 
       Stud.interval(@time_file * 60, :sleep_then_run => true) do
         @logger.debug("S3: time_file triggered, bucketing the file")
 
         move_file_to_bucket_async(@tempfile.path)
-        create_temporary_file
+        create_temporary_file()
       end
     end
   end
@@ -357,6 +357,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
         move_file_to_bucket_async(@tempfile.path)
         next_page()
+        create_temporary_file()
       else
         @logger.debug("S3: tempfile file size report.", :tempfile_size => @tempfile.size, :size_file => @size_file)
       end
@@ -393,15 +394,15 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   public
   def shutdown_upload_workers
+    @logger.debug("S3: Gracefully shutdown the upload workers")
     @upload_queue << LogStash::ShutdownEvent
   end
 
   def teardown
-    # TODO: implement stop! in the Stud gem to gracefull stop the interval loop
-    # Could also add a skip_first_interval options.
-    shutdown_upload_workers
+    shutdown_upload_workers()
+    @periodic_rotation_thread.stop! if @periodic_rotation_thread
 
     @tempfile.close
-    finished
+    finished()
   end
 end
