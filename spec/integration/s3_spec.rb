@@ -4,6 +4,7 @@ require 'socket'
 require "aws-sdk"
 require "fileutils"
 require "stud/temporary"
+require_relative "../supports/helpers"
 
 describe LogStash::Outputs::S3, :integration => true, :s3 => true do
   let!(:minimal_settings)  {  { "access_key_id" => ENV['AWS_ACCESS_KEY_ID'],
@@ -20,16 +21,6 @@ describe LogStash::Outputs::S3, :integration => true, :s3 => true do
   after(:all) do
     delete_matching_keys_on_bucket('studtmp')
     delete_matching_keys_on_bucket('my-prefix')
-  end
-
-  def delete_matching_keys_on_bucket(prefix)
-    s3_object.buckets[minimal_settings["bucket"]].objects.with_prefix(prefix).each do |obj|
-      obj.delete
-    end
-  end
-
-  def key_exists_on_bucket?(key)
-    s3_object.buckets[minimal_settings["bucket"]].objects[key].exists?
   end
 
   describe "#register" do

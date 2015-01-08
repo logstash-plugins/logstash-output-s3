@@ -1,6 +1,8 @@
 # encoding: utf-8
 require "logstash/devutils/rspec/spec_helper"
-require 'logstash/outputs/s3'
+require "logstash/outputs/s3"
+require "logstash/codecs/plain"
+require "aws-sdk"
 
 describe LogStash::Outputs::S3 do
   before do
@@ -14,16 +16,16 @@ describe LogStash::Outputs::S3 do
                                "bucket" => "my-bucket" } }
 
   describe "configuration" do
+    let!(:config) { { "endpoint_region" => "sa-east-1" } }
+
     it "should support the deprecated endpoint_region as a configuration option" do
-      config = { "endpoint_region" => "sa-east-1" }
       s3 = LogStash::Outputs::S3.new(config)
       expect(s3.aws_options_hash[:s3_endpoint]).to eq("s3-sa-east-1.amazonaws.com")
     end
 
-    it "should use the depracated option before failling back to the region" do
-      config = { "region" => "us-east-1", "endpoint_region" => "sa-east-1" }
-      s3 = LogStash::Outputs::S3.new(config)
-      expect(s3.aws_options_hash[:s3_endpoint]).to eq("s3-sa-east-1.amazonaws.com")
+    it "should use the deprecated option before failling back to the region" do
+      s3 = LogStash::Outputs::S3.new(config.merge({ "region" => 'us-east-1' }))
+      expect(s3.aws_options_hash).to include(:s3_endpoint => "s3-sa-east-1.amazonaws.com")
     end
   end
 
@@ -154,11 +156,12 @@ describe LogStash::Outputs::S3 do
   end
 
   describe "#rotate_events_log" do
+    let(:s3) { LogStash::Outputs::S3.new(minimal_settings.merge({ "size_file" => 1024 })) }
+
     it "returns true if the tempfile is over the file_size limit" do
       Stud::Temporary.file do |tmp|
         tmp.stub(:size) { 2024001 }
 
-        s3 = LogStash::Outputs::S3.new(minimal_settings.merge({ "size_file" => 1024 }))
         s3.tempfile = tmp
         expect(s3.rotate_events_log?).to be(true)
       end
@@ -168,7 +171,6 @@ describe LogStash::Outputs::S3 do
       Stud::Temporary.file do |tmp|
         tmp.stub(:size) { 100 }
 
-        s3 = LogStash::Outputs::S3.new(minimal_settings.merge({ "size_file" => 1024 }))
         s3.tempfile = tmp
         expect(s3.rotate_events_log?).to eq(false)
       end
