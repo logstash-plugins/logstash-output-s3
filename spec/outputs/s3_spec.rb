@@ -1,8 +1,11 @@
 # encoding: utf-8
 require "logstash/devutils/rspec/spec_helper"
 require "logstash/outputs/s3"
-require "logstash/codecs/plain"
+require "logstash/codecs/line"
+require "logstash/pipeline"
 require "aws-sdk"
+require "fileutils"
+require_relative "../supports/helpers"
 
 describe LogStash::Outputs::S3 do
   before do
@@ -230,13 +233,86 @@ describe LogStash::Outputs::S3 do
       data = {"foo" => "bar", "baz" => {"bah" => ["a","b","c"]}, "@timestamp" => "2014-05-30T02:52:17.929Z"}
       event = LogStash::Event.new(data)
 
-      expect_any_instance_of(LogStash::Codecs::Plain).to receive(:encode).with(event)
+      expect_any_instance_of(LogStash::Codecs::Line).to receive(:encode).with(event)
 
       s3 = LogStash::Outputs::S3.new(minimal_settings)
       allow(s3).to receive(:test_s3_write)
       s3.register
 
       s3.receive(event)
+    end
+  end
+
+  describe "when rotating the temporary file" do
+    before { allow(File).to receive(:delete) }
+
+    it "doesn't skip events if using the size_file option" do
+      Stud::Temporary.directory do |temporary_directory|
+        size_file = rand(200..20000)
+        event_count = rand(3000..15000)
+
+        config = %Q[
+        input {
+          generator {
+            count => #{event_count}
+          }
+        }
+        output {
+          s3 {
+            size_file => #{size_file}
+            codec => line
+            temporary_directory => '#{temporary_directory}'
+            bucket => 'testing'
+          }
+        }
+        ]
+
+        pipeline = LogStash::Pipeline.new(config)
+
+        pipeline_thread = Thread.new { pipeline.run }
+        sleep 0.1 while !pipeline.ready?
+        pipeline_thread.join
+
+        events_written_count = events_in_files(Dir[File.join(temporary_directory, 'ls.*.txt')])
+        expect(events_written_count).to eq(event_count)
+      end
+    end
+
+    it "doesn't skip events if using the time_file option", :tag => :slow do
+      Stud::Temporary.directory do |temporary_directory|
+        time_file = rand(5..10)
+        number_of_rotation = rand(4..10)
+
+        config = {
+          "time_file" => time_file,
+          "codec" => "line",
+          "temporary_directory" => temporary_directory,
+          "bucket" => "testing"
+        }
+
+        s3 = LogStash::Outputs::S3.new(config)
+        # Make the test run in seconds intead of minutes..
+        allow(s3).to receive(:periodic_interval).and_return(time_file)
+        s3.register
+
+        # Force to have a few files rotation
+        stop_time = Time.now + (number_of_rotation * time_file)
+        event_count = 0
+
+        event = LogStash::Event.new("message" => "Hello World")
+
+        until Time.now > stop_time do
+          s3.receive(event)
+          event_count += 1
+        end
+
+        generated_files = Dir[File.join(temporary_directory, 'ls.*.txt')]
+
+        events_written_count = events_in_files(generated_files)
+
+        expect(generated_files.count).to eq(number_of_rotation)
+        expect(events_written_count).to eq(event_count)
+      end
     end
   end
 end
