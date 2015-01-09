@@ -2,9 +2,7 @@
 require "logstash/outputs/base"
 require "logstash/namespace"
 require "logstash/plugin_mixins/aws_config"
-
 require "stud/temporary"
-
 require "socket" # for Socket.gethostname
 require "thread"
 require "tmpdir"
@@ -72,6 +70,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   config_name "s3"
   milestone 1
+  default :codec, 'line'
 
   # S3 bucket
   config :bucket, :validate => :string
@@ -104,7 +103,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   # Set the directory where logstash will store the tmp files before sending it to S3
   # default to the current OS temporary directory in linux /tmp/logstash
-  config :temporary_directory, :validate => :string, :default => File.join(Dir.tmpdir(), "logstash")
+  config :temporary_directory, :validate => :string, :default => File.join(Dir.tmpdir, "logstash")
 
   # Specify a prefix to the uploaded filename, this can simulate directories on S3
   config :prefix, :validate => :string, :default => ''
@@ -180,7 +179,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     # http://ruby.awsblog.com/post/Tx16QY1CI5GVBFT/Threading-with-the-AWS-SDK-for-Ruby
     AWS.eager_autoload!(AWS::S3)
 
-    workers_not_supported()
+    workers_not_supported
 
     @s3 = aws_s3_config
     @upload_queue = Queue.new
@@ -195,16 +194,16 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       FileUtils.mkdir_p(@temporary_directory)
     end
 
-    test_s3_write()
+    test_s3_write
 
-    restore_from_crashes() if @restore == true
-    reset_page_counter()
-    create_temporary_file()
-    configure_periodic_uploader() if time_file != 0
-    configure_upload_workers()
+    restore_from_crashes if @restore == true
+    reset_page_counter
+    create_temporary_file
+    configure_periodic_rotation if time_file != 0
+    configure_upload_workers
 
-    @codec.on_event do |event|
-      handle_event(event)
+    @codec.on_event do |event, encoded_event|
+      handle_event(encoded_event)
     end
   end
 
@@ -323,13 +322,19 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     @periodic_rotation_thread = Stud::Task.new do
       LogStash::Util::set_thread_name("<S3 periodic uploader")
 
-      Stud.interval(@time_file * 60, :sleep_then_run => true) do
-        @logger.debug("S3: time_file triggered, bucketing the file")
+      Stud.interval(periodic_interval, :sleep_then_run => true) do
+        @logger.debug("S3: time_file triggered, bucketing the file", :filename => @tempfile.path)
 
         move_file_to_bucket_async(@tempfile.path)
-        create_temporary_file()
+        next_page
+        create_temporary_file
       end
     end
+  end
+
+  public
+  def periodic_interval
+    @time_file * 60
   end
 
   public
@@ -350,21 +355,21 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     @codec.encode(event)
   end
 
-  def handle_event(event)
+  def handle_event(encoded_event)
     if write_events_to_multiple_files?
       if rotate_events_log?
         @logger.debug("S3: tempfile is too large, let's bucket it and create new file", :tempfile => File.basename(@tempfile))
 
         move_file_to_bucket_async(@tempfile.path)
-        next_page()
-        create_temporary_file()
+        next_page
+        create_temporary_file
       else
         @logger.debug("S3: tempfile file size report.", :tempfile_size => @tempfile.size, :size_file => @size_file)
       end
 
-      write_to_tempfile(event)
+      write_to_tempfile(encoded_event)
     else
-      write_to_tempfile(event)
+      write_to_tempfile(encoded_event)
     end
   end
 
@@ -388,7 +393,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       end
     rescue Errno::ENOSPC
       @logger.error("S3: No space left in temporary directory", :temporary_directory => @temporary_directory)
-      teardown()
+      teardown
     end
   end
 
@@ -399,10 +404,10 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   end
 
   def teardown
-    shutdown_upload_workers()
+    shutdown_upload_workers
     @periodic_rotation_thread.stop! if @periodic_rotation_thread
 
     @tempfile.close
-    finished()
+    finished
   end
 end
