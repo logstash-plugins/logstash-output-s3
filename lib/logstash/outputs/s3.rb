@@ -253,7 +253,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   def test_s3_write
     @logger.debug("S3: Creating a test file on S3")
 
-    test_filename = File.join(@temporary_directory, "logstash-programmatic-access-test-object")
+    test_filename = File.join(@temporary_directory,
+                              "logstash-programmatic-access-test-object-#{Time.now.to_i}")
 
     File.open(test_filename, 'a') do |file|
       file.write('test')
