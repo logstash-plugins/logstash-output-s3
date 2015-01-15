@@ -7,6 +7,10 @@ require "stud/temporary"
 require_relative "../supports/helpers"
 
 describe LogStash::Outputs::S3, :integration => true, :s3 => true do
+  before do
+    Thread.abort_on_exception = true
+  end
+
   let!(:minimal_settings)  {  { "access_key_id" => ENV['AWS_ACCESS_KEY_ID'],
                                "secret_access_key" => ENV['AWS_SECRET_ACCESS_KEY'],
                                "bucket" => ENV['AWS_LOGSTASH_TEST_BUCKET'], 
