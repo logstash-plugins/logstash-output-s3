@@ -207,7 +207,151 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     end
   end
 
+
+  # Use the same method that Amazon use to check
+  # permission on the user bucket by creating a small file
   public
+  def test_s3_write
+    @logger.debug("S3: Creating a test file on S3")
+
+    test_filename = File.join(@temporary_directory,
+                              "logstash-programmatic-access-test-object-#{Time.now.to_i}")
+
+    File.open(test_filename, 'a') do |file|
+      file.write('test')
+    end
+
+    begin
+      write_on_bucket(test_filename)
+      delete_on_bucket(test_filename)
+    ensure
+      File.delete(test_filename)
+    end
+  end
+  
+  public
+  def restore_from_crashes
+    @logger.debug("S3: is attempting to verify previous crashes...")
+
+    Dir[File.join(@temporary_directory, "*.#{TEMPFILE_EXTENSION}")].each do |file|
+      name_file = File.basename(file)
+      @logger.warn("S3: have found temporary file the upload process crashed, uploading file to S3.", :filename => name_file)
+      move_file_to_bucket_async(file)
+    end
+  end
+
+  public
+  def move_file_to_bucket(file)
+    if !File.zero?(file)
+      write_on_bucket(file)
+      @logger.debug("S3: file was put on the upload thread", :filename => File.basename(file), :bucket => @bucket)
+    end
+
+    begin
+      File.delete(file)
+    rescue Errno::ENOENT
+      # Something else deleted the file, logging but not raising the issue
+      @logger.warn("S3: Cannot delete the temporary file since it doesn't exist on disk", :filename => File.basename(file))
+    rescue Errno::EACCES
+      @logger.error("S3: Logstash doesnt have the permission to delete the file in the temporary directory.", :filename => File.basename, :temporary_directory => @temporary_directory)
+    end
+  end
+
+  public
+  def periodic_interval
+    @time_file * 60
+  end
+
+  public
+  def get_temporary_filename(page_counter = 0)
+    current_time = Time.now
+    filename = "ls.s3.#{Socket.gethostname}.#{current_time.strftime("%Y-%m-%dT%H.%M")}"
+
+    if @tags.size > 0
+      return "#{filename}.tag_#{@tags.join('.')}.part#{page_counter}.#{TEMPFILE_EXTENSION}"
+    else
+      return "#{filename}.part#{page_counter}.#{TEMPFILE_EXTENSION}"
+    end
+  end
+
+  public
+  def receive(event)
+    return unless output?(event)
+    @codec.encode(event)
+  end
+
+  public
+  def rotate_events_log?
+    @tempfile.size > @size_file
+  end
+
+  public
+  def write_events_to_multiple_files?
+    @size_file > 0
+  end
+
+  public
+  def write_to_tempfile(event)
+    begin
+      @logger.debug("S3: put event into tempfile ", :tempfile => File.basename(@tempfile))
+
+      @file_rotation_lock.synchronize do
+        @tempfile.syswrite(event)
+      end
+    rescue Errno::ENOSPC
+      @logger.error("S3: No space left in temporary directory", :temporary_directory => @temporary_directory)
+      teardown
+    end
+  end
+
+  public
+  def teardown
+    shutdown_upload_workers
+    @periodic_rotation_thread.stop! if @periodic_rotation_thread
+
+    @tempfile.close
+    finished
+  end
+
+  private
+  def shutdown_upload_workers
+    @logger.debug("S3: Gracefully shutdown the upload workers")
+    @upload_queue << LogStash::ShutdownEvent
+  end
+
+  private
+  def handle_event(encoded_event)
+    if write_events_to_multiple_files?
+      if rotate_events_log?
+        @logger.debug("S3: tempfile is too large, let's bucket it and create new file", :tempfile => File.basename(@tempfile))
+
+        move_file_to_bucket_async(@tempfile.path)
+        next_page
+        create_temporary_file
+      else
+        @logger.debug("S3: tempfile file size report.", :tempfile_size => @tempfile.size, :size_file => @size_file)
+      end
+    end 
+
+    write_to_tempfile(encoded_event)
+  end
+
+  private
+  def configure_periodic_rotation
+    @periodic_rotation_thread = Stud::Task.new do
+      LogStash::Util::set_thread_name("<S3 periodic uploader")
+
+      Stud.interval(periodic_interval, :sleep_then_run => true) do
+        @logger.debug("S3: time_file triggered, bucketing the file", :filename => @tempfile.path)
+
+        move_file_to_bucket_async(@tempfile.path)
+        next_page
+        create_temporary_file
+      end
+    end
+  end
+
+  private
   def configure_upload_workers
     @logger.debug("S3: Configure upload workers")
 
@@ -238,36 +382,17 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     end
   end
 
-  public
+  private
   def next_page
     @page_counter += 1
   end
 
+  private
   def reset_page_counter
     @page_counter = 0
   end
 
-  # Use the same method that Amazon use to check
-  # permission on the user bucket by creating a small file
-  public
-  def test_s3_write
-    @logger.debug("S3: Creating a test file on S3")
-
-    test_filename = File.join(@temporary_directory,
-                              "logstash-programmatic-access-test-object-#{Time.now.to_i}")
-
-    File.open(test_filename, 'a') do |file|
-      file.write('test')
-    end
-
-    begin
-      write_on_bucket(test_filename)
-      delete_on_bucket(test_filename)
-    ensure
-      File.delete(test_filename)
-    end
-  end
-  
+  private
   def delete_on_bucket(filename)
     bucket = @s3.buckets[@bucket]
 
@@ -285,130 +410,9 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     end
   end
 
-  public
-  def restore_from_crashes
-    @logger.debug("S3: is attempting to verify previous crashes...")
-
-    Dir[File.join(@temporary_directory, "*.#{TEMPFILE_EXTENSION}")].each do |file|
-      name_file = File.basename(file)
-      @logger.warn("S3: have found temporary file the upload process crashed, uploading file to S3.", :filename => name_file)
-      move_file_to_bucket_async(file)
-    end
-  end
-
-  public
-  def move_file_to_bucket(file)
-    if !File.zero?(file)
-      write_on_bucket(file)
-      @logger.debug("S3: file was put on the upload thread", :filename => File.basename(file), :bucket => @bucket)
-    end
-
-    begin
-      File.delete(file)
-    rescue Errno::ENOENT
-      # Something else deleted the file, logging but not raising the issue
-      @logger.warn("S3: Cannot delete the temporary file since it doesn't exist on disk", :filename => File.basename(file))
-    rescue Errno::EACCES
-      @logger.error("S3: Logstash doesnt have the permission to delete the file in the temporary directory.", :filename => File.basename, :temporary_directory => @temporary_directory)
-    end
-  end
-
+  private
   def move_file_to_bucket_async(file)
     @logger.debug("S3: Sending the file to the upload queue.", :filename => File.basename(file))
     @upload_queue.enq(file)
-  end
-
-  public
-  def configure_periodic_rotation
-    @periodic_rotation_thread = Stud::Task.new do
-      LogStash::Util::set_thread_name("<S3 periodic uploader")
-
-      Stud.interval(periodic_interval, :sleep_then_run => true) do
-        @logger.debug("S3: time_file triggered, bucketing the file", :filename => @tempfile.path)
-
-        move_file_to_bucket_async(@tempfile.path)
-        next_page
-        create_temporary_file
-      end
-    end
-  end
-
-  public
-  def periodic_interval
-    @time_file * 60
-  end
-
-  public
-  def get_temporary_filename(page_counter = 0)
-    current_time = Time.now
-    filename = "ls.s3.#{Socket.gethostname}.#{current_time.strftime("%Y-%m-%dT%H.%M")}"
-
-    if @tags.size > 0
-      return "#{filename}.tag_#{@tags.join('.')}.part#{page_counter}.#{TEMPFILE_EXTENSION}"
-    else
-      return "#{filename}.part#{page_counter}.#{TEMPFILE_EXTENSION}"
-    end
-  end
-
-  public
-  def receive(event)
-    return unless output?(event)
-    @codec.encode(event)
-  end
-
-  def handle_event(encoded_event)
-    if write_events_to_multiple_files?
-      if rotate_events_log?
-        @logger.debug("S3: tempfile is too large, let's bucket it and create new file", :tempfile => File.basename(@tempfile))
-
-        move_file_to_bucket_async(@tempfile.path)
-        next_page
-        create_temporary_file
-      else
-        @logger.debug("S3: tempfile file size report.", :tempfile_size => @tempfile.size, :size_file => @size_file)
-      end
-
-      write_to_tempfile(encoded_event)
-    else
-      write_to_tempfile(encoded_event)
-    end
-  end
-
-  public
-  def rotate_events_log?
-    @tempfile.size > @size_file
-  end
-
-  public
-  def write_events_to_multiple_files?
-    @size_file > 0
-  end
-
-  public
-  def write_to_tempfile(event)
-    begin
-      @logger.debug("S3: put event into tempfile ", :tempfile => File.basename(@tempfile))
-
-      @file_rotation_lock.synchronize do
-        @tempfile.syswrite(event)
-      end
-    rescue Errno::ENOSPC
-      @logger.error("S3: No space left in temporary directory", :temporary_directory => @temporary_directory)
-      teardown
-    end
-  end
-
-  public
-  def shutdown_upload_workers
-    @logger.debug("S3: Gracefully shutdown the upload workers")
-    @upload_queue << LogStash::ShutdownEvent
-  end
-
-  def teardown
-    shutdown_upload_workers
-    @periodic_rotation_thread.stop! if @periodic_rotation_thread
-
-    @tempfile.close
-    finished
   end
 end

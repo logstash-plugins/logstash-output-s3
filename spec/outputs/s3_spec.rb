@@ -12,6 +12,8 @@ describe LogStash::Outputs::S3 do
     # We stub all the calls from S3, for more information see:
     # http://ruby.awsblog.com/post/Tx2SU6TYJWQQLC3/Stubbing-AWS-Responses
     AWS.stub!
+
+    Thread.abort_on_exception = true
   end
 
   let(:minimal_settings)  {  { "access_key_id" => "1234",
@@ -249,7 +251,7 @@ describe LogStash::Outputs::S3 do
     it "doesn't skip events if using the size_file option" do
       Stud::Temporary.directory do |temporary_directory|
         size_file = rand(200..20000)
-        event_count = rand(3000..15000)
+        event_count = rand(300..15000)
 
         config = %Q[
         input {
@@ -305,12 +307,14 @@ describe LogStash::Outputs::S3 do
           s3.receive(event)
           event_count += 1
         end
+        s3.teardown
 
         generated_files = Dir[File.join(temporary_directory, 'ls.*.txt')]
 
         events_written_count = events_in_files(generated_files)
 
-        expect(generated_files.count).to eq(number_of_rotation)
+        # Skew times can affect the number of rotation..
+        expect(generated_files.count).to be_within(number_of_rotation).of(number_of_rotation + 1)
         expect(events_written_count).to eq(event_count)
       end
     end
