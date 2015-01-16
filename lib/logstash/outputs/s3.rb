@@ -148,9 +148,9 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       # prepare for write the file
       object = bucket.objects[remote_filename]
       object.write(:file => file, :acl => @canned_acl)
-    rescue AWS::Errors::Base => e
-      @logger.error("S3: AWS error", :error => e)
-      raise LogStash::Error, "AWS Configuration Error"
+    rescue AWS::Errors::Base => error
+      @logger.error("S3: AWS error", :error => error)
+      raise LogStash::Error, "AWS Configuration Error, #{error}"
     end
 
     @logger.debug("S3: has written remote file in bucket with canned ACL", :remote_filename => remote_filename, :bucket  => @bucket, :canned_acl => @canned_acl)
