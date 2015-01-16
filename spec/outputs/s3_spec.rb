@@ -28,8 +28,8 @@ describe LogStash::Outputs::S3 do
       expect(s3.aws_options_hash[:s3_endpoint]).to eq("s3-sa-east-1.amazonaws.com")
     end
 
-    it "should use the deprecated option before failling back to the region" do
-      s3 = LogStash::Outputs::S3.new(config.merge({ "region" => 'us-east-1' }))
+    it "should fallback to region if endpoint_region isnt defined" do
+      s3 = LogStash::Outputs::S3.new(config.merge({ "region" => 'sa-east-1' }))
       expect(s3.aws_options_hash).to include(:s3_endpoint => "s3-sa-east-1.amazonaws.com")
     end
   end
