@@ -261,6 +261,8 @@ describe LogStash::Outputs::S3 do
         }
         output {
           s3 {
+            access_key_id => "1234"
+            secret_access_key => "secret"
             size_file => #{size_file}
             codec => line
             temporary_directory => '#{temporary_directory}'
@@ -292,7 +294,7 @@ describe LogStash::Outputs::S3 do
           "bucket" => "testing"
         }
 
-        s3 = LogStash::Outputs::S3.new(config)
+        s3 = LogStash::Outputs::S3.new(minimal_settings.merge(config))
         # Make the test run in seconds intead of minutes..
         allow(s3).to receive(:periodic_interval).and_return(time_file)
         s3.register
