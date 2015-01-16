@@ -13,7 +13,8 @@ describe LogStash::Outputs::S3, :integration => true, :s3 => true do
 
   let!(:minimal_settings)  {  { "access_key_id" => ENV['AWS_ACCESS_KEY_ID'],
                                 "secret_access_key" => ENV['AWS_SECRET_ACCESS_KEY'],
-                                "bucket" => ENV['AWS_LOGSTASH_TEST_BUCKET'], 
+                                "bucket" => ENV['AWS_LOGSTASH_TEST_BUCKET'],
+                                "region" => ENV["AWS_REGION"] || "us-east-1",
                                 "temporary_directory" => Stud::Temporary.pathname('temporary_directory') }}
 
   let!(:s3_object) do
