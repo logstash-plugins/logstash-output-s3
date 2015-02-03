@@ -144,13 +144,15 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
     @logger.debug("S3: ready to write file in bucket", :remote_filename => remote_filename, :bucket => @bucket)
 
-    begin
-      # prepare for write the file
-      object = bucket.objects[remote_filename]
-      object.write(:file => file, :acl => @canned_acl)
-    rescue AWS::Errors::Base => error
-      @logger.error("S3: AWS error", :error => error)
-      raise LogStash::Error, "AWS Configuration Error, #{error}"
+    File.open(file, 'r') do |fileIO|
+      begin
+        # prepare for write the file
+        object = bucket.objects[remote_filename]
+        object.write(fileIO, :acl => @canned_acl)
+      rescue AWS::Errors::Base => error
+        @logger.error("S3: AWS error", :error => error)
+        raise LogStash::Error, "AWS Configuration Error, #{error}"
+      end
     end
 
     @logger.debug("S3: has written remote file in bucket with canned ACL", :remote_filename => remote_filename, :bucket  => @bucket, :canned_acl => @canned_acl)
@@ -253,7 +255,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       # Something else deleted the file, logging but not raising the issue
       @logger.warn("S3: Cannot delete the temporary file since it doesn't exist on disk", :filename => File.basename(file))
     rescue Errno::EACCES
-      @logger.error("S3: Logstash doesnt have the permission to delete the file in the temporary directory.", :filename => File.basename, :temporary_directory => @temporary_directory)
+      @logger.error("S3: Logstash doesnt have the permission to delete the file in the temporary directory.", :filename => File.basename(file), :temporary_directory => @temporary_directory)
     end
   end
 

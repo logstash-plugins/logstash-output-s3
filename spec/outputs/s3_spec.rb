@@ -51,6 +51,7 @@ describe LogStash::Outputs::S3 do
       s3.register
 
       expect(Dir.exist?(temporary_directory)).to eq(true)
+      s3.teardown
       FileUtils.rm_r(temporary_directory)
     end
 
@@ -92,10 +93,6 @@ describe LogStash::Outputs::S3 do
   end
 
   describe "#write_on_bucket" do
-    after(:all) do
-      File.unlink(fake_data.path)
-    end
-
     let!(:fake_data) { Stud::Temporary.file }
 
     let(:fake_bucket) do
