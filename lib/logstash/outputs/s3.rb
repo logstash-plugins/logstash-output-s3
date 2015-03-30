@@ -111,7 +111,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   config :upload_workers_count, :validate => :number, :default => 1
 
   # Specify whether to use Amazon's AES-256 serverside encryption.
-  config :serverside_encryption, :validate => :boolean, :default => false
+  config :server_side_encryption, :validate => :boolean, :default => false
 
   # Exposed attributes for testing purpose.
   attr_accessor :tempfile
@@ -152,7 +152,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
         # prepare for write the file
         object = bucket.objects[remote_filename]
 
-        object.write(fileIO, :acl => @canned_acl, :server_side_encryption => @serverside_encryption ? :aes256 : nil)
+        object.write(fileIO, :acl => @canned_acl, :server_side_encryption => @server_side_encryption ? :aes256 : nil)
       rescue AWS::Errors::Base => error
         @logger.error("S3: AWS error", :error => error)
         raise LogStash::Error, "AWS Configuration Error, #{error}"
