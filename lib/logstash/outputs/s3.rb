@@ -69,6 +69,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   S3_INVALID_CHARACTERS = /[\^`><]/
 
   config_name "s3"
+  milestone 1
   default :codec, 'line'
 
   # S3 bucket
@@ -110,6 +111,9 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # Specify how many workers to use to upload the files to S3
   config :upload_workers_count, :validate => :number, :default => 1
 
+  # Gzip before uploading
+  config :gzip, :validate => :boolean, :default => false
+
   # Exposed attributes for testing purpose.
   attr_accessor :tempfile
   attr_reader :page_counter
@@ -148,7 +152,11 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       begin
         # prepare for write the file
         object = bucket.objects[remote_filename]
-        object.write(fileIO, :acl => @canned_acl)
+        if @gzip
+          object.write(fileIO, :acl => @canned_acl, :content_encoding => "gzip")
+        else
+          object.write(fileIO, :acl => @canned_acl)
+        end
       rescue AWS::Errors::Base => error
         @logger.error("S3: AWS error", :error => error)
         raise LogStash::Error, "AWS Configuration Error, #{error}"
@@ -176,7 +184,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   public
   def register
-    require "aws-sdk"
+    require "aws-sdk-v1"
     # required if using ruby version < 2.0
     # http://ruby.awsblog.com/post/Tx16QY1CI5GVBFT/Threading-with-the-AWS-SDK-for-Ruby
     AWS.eager_autoload!(AWS::S3)
@@ -245,7 +253,11 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   public
   def move_file_to_bucket(file)
     if !File.zero?(file)
-      write_on_bucket(file)
+      if @gzip
+        gzip_write_on_bucket(file)
+      else
+        write_on_bucket(file)
+      end
       @logger.debug("S3: file was put on the upload thread", :filename => File.basename(file), :bucket => @bucket)
     end
 
@@ -284,6 +296,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   public
   def rotate_events_log?
+    @logger.debug("Tempfile file size report.", :tempfile_size => @tempfile.size, :size_file => @size_file)
     @tempfile.size > @size_file
   end
 
@@ -410,6 +423,24 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       @logger.error("S3: AWS error", :error => e)
       raise LogStash::ConfigurationError, "AWS Configuration Error"
     end
+  end
+
+  private
+  def gzip_write_on_bucket(filename)
+    gzip_filename = gzipped(filename)
+    write_on_bucket(gzip_filename)
+    File.delete(gzip_filename)
+  end
+
+  private
+  def gzipped(filename)
+    compressed_filename = filename + '.gz'
+    @logger.debug("Compressing into #{compressed_filename}")
+    Zlib::GzipWriter.open(compressed_filename) do |gzip_writer|
+      gzip_writer.write IO.binread(filename)
+      gzip_writer.close
+    end
+    compressed_filename
   end
 
   private
