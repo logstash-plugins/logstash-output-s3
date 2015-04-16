@@ -296,7 +296,6 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   public
   def rotate_events_log?
-    @logger.debug("Tempfile file size report.", :tempfile_size => @tempfile.size, :size_file => @size_file)
     @tempfile.size > @size_file
   end
 
@@ -359,9 +358,13 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       Stud.interval(periodic_interval, :sleep_then_run => true) do
         @logger.debug("S3: time_file triggered, bucketing the file", :filename => @tempfile.path)
 
-        move_file_to_bucket_async(@tempfile.path)
-        next_page
-        create_temporary_file
+        if @tempfile.size > 0
+          move_file_to_bucket_async(@tempfile.path)
+          next_page
+          create_temporary_file
+        else
+          @logger.debug("tempfile is empty")
+        end
       end
     end
   end
