@@ -58,7 +58,6 @@ require "fileutils"
 #      bucket => "boss_please_open_your_bucket" (required)
 #      size_file => 2048                        (optional)
 #      time_file => 5                           (optional)
-#      format => "plain"                        (optional)
 #      canned_acl => "private"                  (optional. Options are "private", "public_read", "public_read_write", "authenticated_read". Defaults to "private" )
 #    }
 #
@@ -69,7 +68,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   S3_INVALID_CHARACTERS = /[\^`><]/
 
   config_name "s3"
-  default :codec, 'line'
+  config :codec, :validate => :codec,
+         :default => 'line'
 
   # S3 bucket
   config :bucket, :validate => :string
@@ -123,7 +123,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   def aws_service_endpoint(region)
     # Make the deprecated endpoint_region work
     # TODO: (ph) Remove this after deprecation.
-    
+
     if @endpoint_region
       region_to_use = @endpoint_region
     else
@@ -230,7 +230,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       File.delete(test_filename)
     end
   end
-  
+
   public
   def restore_from_crashes
     @logger.debug("S3: is attempting to verify previous crashes...")
@@ -308,10 +308,14 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   public
   def teardown
+    #close temp file and ready to upload if needed
+    @tempfile.close
+    # upload current temporary file if needed
+    move_file_to_bucket(@tempfile.path)
+
     shutdown_upload_workers
     @periodic_rotation_thread.stop! if @periodic_rotation_thread
 
-    @tempfile.close
     finished
   end
 
@@ -333,7 +337,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       else
         @logger.debug("S3: tempfile file size report.", :tempfile_size => @tempfile.size, :size_file => @size_file)
       end
-    end 
+    end
 
     write_to_tempfile(encoded_event)
   end
