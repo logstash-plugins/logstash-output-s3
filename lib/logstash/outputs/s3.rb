@@ -112,7 +112,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   config :upload_workers_count, :validate => :number, :default => 1
 
   # Gzip before uploading
-  config :gzip, :validate => :boolean, :default => false
+  config :gzip, :validate => :boolean, :default => true
 
   # Exposed attributes for testing purpose.
   attr_accessor :tempfile
@@ -169,21 +169,24 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # This method is used for create new empty temporary files for use. Flag is needed for indicate new subsection time_file.
   public
   def create_temporary_file
-    filename = File.join(@temporary_directory, get_temporary_filename(@page_counter))
+    @filename = File.join(@temporary_directory, get_temporary_filename(@page_counter))
 
-    @logger.debug("S3: Creating a new temporary file", :filename => filename)
+    @logger.debug("S3: Creating a new temporary file", :filename => @filename)
 
-    @file_rotation_lock.synchronize do
-      unless @tempfile.nil?
-        @tempfile.close
-      end
-
-      @tempfile = File.open(filename, "a")
+    unless @gzip_writer.nil?
+      @gzip_writer.close
     end
+
+    @gzip_writer = Zlib::GzipWriter.open(@filename)
+    @logger.debug("S3: New temporary file created", :filename => @filename)
   end
 
   public
   def register
+    if !@gzip
+      raise NotImplementedError.new("Only gzipped mode is supported.")
+    end
+
     require "aws-sdk-v1"
     # required if using ruby version < 2.0
     # http://ruby.awsblog.com/post/Tx16QY1CI5GVBFT/Threading-with-the-AWS-SDK-for-Ruby
@@ -208,7 +211,9 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
     restore_from_crashes if @restore == true
     reset_page_counter
-    create_temporary_file
+    @file_rotation_lock.synchronize do
+      create_temporary_file
+    end
     configure_periodic_rotation if time_file != 0
     configure_upload_workers
 
@@ -243,7 +248,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   def restore_from_crashes
     @logger.debug("S3: is attempting to verify previous crashes...")
 
-    Dir[File.join(@temporary_directory, "*.#{TEMPFILE_EXTENSION}")].each do |file|
+    Dir[File.join(@temporary_directory, "*.#{TEMPFILE_EXTENSION}*")].each do |file|
       name_file = File.basename(file)
       @logger.warn("S3: have found temporary file the upload process crashed, uploading file to S3.", :filename => name_file)
       move_file_to_bucket_async(file)
@@ -253,15 +258,15 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   public
   def move_file_to_bucket(file)
     if !File.zero?(file)
-      if @gzip
-        gzip_write_on_bucket(file)
-      else
-        write_on_bucket(file)
-      end
+      @logger.debug("File size not zero")
+      write_on_bucket(file)
       @logger.debug("S3: file was put on the upload thread", :filename => File.basename(file), :bucket => @bucket)
+    else
+      @logger.debug("File size is zero")
     end
 
     begin
+      @logger.debug("Deleting uploaded file", :filename => File.basename(file))
       File.delete(file)
     rescue Errno::ENOENT
       # Something else deleted the file, logging but not raising the issue
@@ -282,21 +287,22 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     filename = "ls.s3.#{Socket.gethostname}.#{current_time.strftime("%Y-%m-%dT%H.%M")}"
 
     if @tags.size > 0
-      return "#{filename}.tag_#{@tags.join('.')}.part#{page_counter}.#{TEMPFILE_EXTENSION}"
+      extended_filename = "#{filename}.tag_#{@tags.join('.')}.part#{page_counter}.#{TEMPFILE_EXTENSION}"
     else
-      return "#{filename}.part#{page_counter}.#{TEMPFILE_EXTENSION}"
+      extended_filename = "#{filename}.part#{page_counter}.#{TEMPFILE_EXTENSION}"
     end
+
+    if @gzip
+      extended_filename += '.gz'
+    end
+
+    return extended_filename
   end
 
   public
   def receive(event)
     return unless output?(event)
     @codec.encode(event)
-  end
-
-  public
-  def rotate_events_log?
-    @tempfile.size > @size_file
   end
 
   public
@@ -307,10 +313,9 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   public
   def write_to_tempfile(event)
     begin
-      @logger.debug("S3: put event into tempfile ", :tempfile => File.basename(@tempfile))
-
       @file_rotation_lock.synchronize do
-        @tempfile.syswrite(event)
+        @logger.debug("S3: put event into tempfile ", :tempfile => File.basename(@filename))
+        @gzip_writer.write event
       end
     rescue Errno::ENOSPC
       @logger.error("S3: No space left in temporary directory", :temporary_directory => @temporary_directory)
@@ -323,7 +328,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     shutdown_upload_workers
     @periodic_rotation_thread.stop! if @periodic_rotation_thread
 
-    @tempfile.close
+    @gzip_writer.close
     finished
   end
 
@@ -335,17 +340,17 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   private
   def handle_event(encoded_event)
-    if write_events_to_multiple_files?
-      if rotate_events_log?
-        @logger.debug("S3: tempfile is too large, let's bucket it and create new file", :tempfile => File.basename(@tempfile))
+    #if write_events_to_multiple_files?
+    #  if rotate_events_log?
+    #    @logger.debug("S3: tempfile is too large, let's bucket it and create new file", :tempfile => File.basename(@tempfile))
 
-        move_file_to_bucket_async(@tempfile.path)
-        next_page
-        create_temporary_file
-      else
-        @logger.debug("S3: tempfile file size report.", :tempfile_size => @tempfile.size, :size_file => @size_file)
-      end
-    end 
+    #    move_file_to_bucket_async(@tempfile.path)
+    #    next_page
+    #    create_temporary_file
+    #  else
+    #    @logger.debug("S3: tempfile file size report.", :tempfile_size => @tempfile.size, :size_file => @size_file)
+    #  end
+    #end 
 
     write_to_tempfile(encoded_event)
   end
@@ -356,14 +361,17 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       LogStash::Util::set_thread_name("<S3 periodic uploader")
 
       Stud.interval(periodic_interval, :sleep_then_run => true) do
-        @logger.debug("S3: time_file triggered, bucketing the file", :filename => @tempfile.path)
-
-        if @tempfile.size > 0
-          move_file_to_bucket_async(@tempfile.path)
-          next_page
-          create_temporary_file
-        else
-          @logger.debug("tempfile is empty")
+        @file_rotation_lock.synchronize do
+          @logger.debug("S3: time_file triggered, bucketing the file", :filename => @filename)
+          if @gzip_writer.pos > 0
+            @gzip_writer.flush
+            @gzip_writer.close
+            move_file_to_bucket_async(@filename)
+            next_page
+            create_temporary_file
+          else
+            @logger.debug("tempfile is empty")
+          end
         end
       end
     end
@@ -426,24 +434,6 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       @logger.error("S3: AWS error", :error => e)
       raise LogStash::ConfigurationError, "AWS Configuration Error"
     end
-  end
-
-  private
-  def gzip_write_on_bucket(filename)
-    gzip_filename = gzipped(filename)
-    write_on_bucket(gzip_filename)
-    File.delete(gzip_filename)
-  end
-
-  private
-  def gzipped(filename)
-    compressed_filename = filename + '.gz'
-    @logger.debug("Compressing into #{compressed_filename}")
-    Zlib::GzipWriter.open(compressed_filename) do |gzip_writer|
-      gzip_writer.write IO.binread(filename)
-      gzip_writer.close
-    end
-    compressed_filename
   end
 
   private
