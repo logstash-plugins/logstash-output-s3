@@ -69,7 +69,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   S3_INVALID_CHARACTERS = /[\^`><]/
 
   config_name "s3"
-  milestone 1
+  #milestone 1
   default :codec, 'line'
 
   # S3 bucket
