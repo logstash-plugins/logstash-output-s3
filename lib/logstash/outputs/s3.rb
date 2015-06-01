@@ -337,7 +337,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   public
   def rotate_events_log?
     @file_rotation_lock.synchronize do
-      @tempfile.size > @size_file
+      @tempfile.tell > @size_file
     end
   end
 
@@ -349,7 +349,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   public
   def write_to_tempfile(event)
     begin
-      @logger.debug("S3: put event into tempfile ", :tempfile => File.basename(@tempfile))
+      @logger.debug("S3: put event into tempfile ", :tempfile => File.basename(@tempfile.path))
 
       @file_rotation_lock.synchronize do
         @tempfile.syswrite(event)
@@ -380,13 +380,13 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   def handle_event(encoded_event)
     if write_events_to_multiple_files?
       if rotate_events_log?
-        @logger.debug("S3: tempfile is too large, let's bucket it and create new file", :tempfile => File.basename(@tempfile))
+        @logger.debug("S3: tempfile is too large, let's bucket it and create new file", :tempfile => File.basename(@tempfile.path))
 
         move_file_to_bucket_async(@tempfile.path)
         next_page
         create_temporary_file
       else
-        @logger.debug("S3: tempfile file size report.", :tempfile_size => @tempfile.size, :size_file => @size_file)
+        @logger.debug("S3: tempfile file size report.", :tempfile_size => @tempfile.tell, :size_file => @size_file)
       end
     end
 
