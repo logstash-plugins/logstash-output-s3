@@ -352,7 +352,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       @logger.debug("S3: put event into tempfile ", :tempfile => File.basename(@tempfile.path))
 
       @file_rotation_lock.synchronize do
-        @tempfile.syswrite(event)
+        @tempfile.write(event)
       end
     rescue Errno::ENOSPC
       @logger.error("S3: No space left in temporary directory", :temporary_directory => @temporary_directory)
