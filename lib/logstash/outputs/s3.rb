@@ -135,6 +135,9 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   #
   config :tags, :validate => :array, :default => []
 
+  # Specify the content encoding. Supports ("gzip"). Defaults to "none"
+  config :encoding, :validate => ["none", "gzip"], :default => "none"
+
   # Exposed attributes for testing purpose.
   attr_accessor :tempfile
   attr_reader :page_counter
@@ -185,7 +188,10 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       begin
         # prepare for write the file
         object = bucket.objects[remote_filename]
-        object.write(fileIO, :acl => @canned_acl, :server_side_encryption => @server_side_encryption ? :aes256 : nil)
+        object.write(fileIO,
+                     :acl => @canned_acl,
+                     :server_side_encryption => @server_side_encryption ? :aes256 : nil,
+                     :content_encoding => @encoding == "gzip" ? "gzip" : nil)
       rescue AWS::Errors::Base => error
         @logger.error("S3: AWS error", :error => error)
         raise LogStash::Error, "AWS Configuration Error, #{error}"
@@ -207,7 +213,11 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
         @tempfile.close
       end
 
-      @tempfile = File.open(filename, "a")
+      if @encoding == "gzip"
+        @tempfile = Zlib::GzipWriter.open(filename)
+      else
+        @tempfile = File.open(filename, "a")
+      end
     end
   end
 
@@ -272,7 +282,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   def restore_from_crashes
     @logger.debug("S3: Checking for temp files from a previoius crash...")
 
-    Dir[File.join(@temporary_directory, "*.#{TEMPFILE_EXTENSION}")].each do |file|
+    Dir[File.join(@temporary_directory, "*.#{get_tempfile_extension}")].each do |file|
       name_file = File.basename(file)
       @logger.warn("S3: Found temporary file from crash.  Uploading file to S3.", :filename => name_file)
       move_file_to_bucket_async(file)
@@ -301,15 +311,20 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     @time_file * 60
   end
 
+  private
+  def get_tempfile_extension
+    @encoding == "gzip" ? "#{TEMPFILE_EXTENSION}.gz" : "#{TEMPFILE_EXTENSION}"
+  end
+
   public
   def get_temporary_filename(page_counter = 0)
     current_time = Time.now
     filename = "ls.s3.#{Socket.gethostname}.#{current_time.strftime("%Y-%m-%dT%H.%M")}"
 
     if @tags.size > 0
-      return "#{filename}.tag_#{@tags.join('.')}.part#{page_counter}.#{TEMPFILE_EXTENSION}"
+      return "#{filename}.tag_#{@tags.join('.')}.part#{page_counter}.#{get_tempfile_extension}"
     else
-      return "#{filename}.part#{page_counter}.#{TEMPFILE_EXTENSION}"
+      return "#{filename}.part#{page_counter}.#{get_tempfile_extension}"
     end
   end
 
