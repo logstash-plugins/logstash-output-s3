@@ -68,8 +68,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   S3_INVALID_CHARACTERS = /[\^`><]/
 
   config_name "s3"
-  config :codec, :validate => :codec,
-         :default => 'line'
+  default :codec, 'line'
 
   # S3 bucket
   config :bucket, :validate => :string
@@ -109,6 +108,9 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   # Specify how many workers to use to upload the files to S3
   config :upload_workers_count, :validate => :number, :default => 1
+
+  # Flags for enable move file to s3 in tear down. It's useful if you need to automatic teminate some EC2 instances in aws.
+  config :move_file_in_tear_down, :validate => :boolean, :default => false
 
   # Exposed attributes for testing purpose.
   attr_accessor :tempfile
@@ -308,10 +310,13 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   public
   def teardown
-    #close temp file and ready to upload if needed
+    #close temp file
     @tempfile.close
-    # upload current temporary file if needed
-    move_file_to_bucket(@tempfile.path)
+
+    if @move_file_in_tear_down == true
+      # upload current temporary file if needed
+      move_file_to_bucket(@tempfile.path)
+    end
 
     shutdown_upload_workers
     @periodic_rotation_thread.stop! if @periodic_rotation_thread
