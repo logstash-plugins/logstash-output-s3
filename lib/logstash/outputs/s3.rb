@@ -144,7 +144,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     # find and use the bucket
     bucket = @s3.buckets[@bucket]
 
-    remote_filename = "#{@prefix}#{File.basename(file)}"
+    remote_filename = "#{@prefix}#{File.ctime(file).strftime("%Y/%m/%d/%H.%M")}.#{File.basename(file)}"
 
     @logger.debug("S3: ready to write file in bucket", :remote_filename => remote_filename, :bucket => @bucket)
 
@@ -422,7 +422,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   def delete_on_bucket(filename)
     bucket = @s3.buckets[@bucket]
 
-    remote_filename = "#{@prefix}#{File.basename(filename)}"
+    remote_filename = "#{@prefix}#{File.ctime(file).strftime("%Y/%m/%d/%H.%M")}.#{File.basename(file)}"
 
     @logger.debug("S3: delete file from bucket", :remote_filename => remote_filename, :bucket => @bucket)
 
