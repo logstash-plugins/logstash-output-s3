@@ -110,6 +110,9 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # Specify how many workers to use to upload the files to S3
   config :upload_workers_count, :validate => :number, :default => 1
 
+  # Specify whether to use Amazon's AES-256 serverside encryption.
+  config :server_side_encryption, :validate => :boolean, :default => false
+
   # Exposed attributes for testing purpose.
   attr_accessor :tempfile
   attr_reader :page_counter
@@ -123,7 +126,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   def aws_service_endpoint(region)
     # Make the deprecated endpoint_region work
     # TODO: (ph) Remove this after deprecation.
-    
+
     if @endpoint_region
       region_to_use = @endpoint_region
     else
@@ -148,7 +151,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       begin
         # prepare for write the file
         object = bucket.objects[remote_filename]
-        object.write(fileIO, :acl => @canned_acl)
+
+        object.write(fileIO, :acl => @canned_acl, :server_side_encryption => @server_side_encryption ? :aes256 : nil)
       rescue AWS::Errors::Base => error
         @logger.error("S3: AWS error", :error => error)
         raise LogStash::Error, "AWS Configuration Error, #{error}"
@@ -230,7 +234,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       File.delete(test_filename)
     end
   end
-  
+
   public
   def restore_from_crashes
     @logger.debug("S3: is attempting to verify previous crashes...")
@@ -333,7 +337,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       else
         @logger.debug("S3: tempfile file size report.", :tempfile_size => @tempfile.size, :size_file => @size_file)
       end
-    end 
+    end
 
     write_to_tempfile(encoded_event)
   end
