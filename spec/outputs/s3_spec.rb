@@ -159,6 +159,7 @@ describe LogStash::Outputs::S3 do
 
   describe "#rotate_events_log" do
     let(:s3) { LogStash::Outputs::S3.new(minimal_settings.merge({ "size_file" => 1024 })) }
+    before { s3.register }
 
     it "returns true if the tempfile is over the file_size limit" do
       Stud::Temporary.file do |tmp|
