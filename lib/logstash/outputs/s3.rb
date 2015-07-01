@@ -382,9 +382,13 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       if rotate_events_log?
         @logger.debug("S3: tempfile is too large, let's bucket it and create new file", :tempfile => File.basename(@tempfile.path))
 
-        move_file_to_bucket_async(@tempfile.path)
+        tempfile_path = @tempfile.path
+        # close and start next file before sending the previous one
         next_page
         create_temporary_file
+
+        # send to s3
+        move_file_to_bucket_async(tempfile_path)
       else
         @logger.debug("S3: tempfile file size report.", :tempfile_size => @tempfile.tell, :size_file => @size_file)
       end
@@ -401,9 +405,13 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       Stud.interval(periodic_interval, :sleep_then_run => true) do
         @logger.debug("S3: time_file triggered, bucketing the file", :filename => @tempfile.path)
 
-        move_file_to_bucket_async(@tempfile.path)
+        tempfile_path = @tempfile.path
+        # close and start next file before sending the previous one
         next_page
         create_temporary_file
+
+        # send to s3
+        move_file_to_bucket_async(tempfile_path)
       end
     end
   end
