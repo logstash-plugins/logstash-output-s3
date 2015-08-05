@@ -70,8 +70,8 @@ describe LogStash::Outputs::S3 do
 
   describe "#generate_temporary_filename" do
     before do
-      Socket.stub(:gethostname) { "logstash.local" }
-      Time.stub(:now) { Time.new('2015-10-09-09:00') }
+      allow(Socket).to receive(:gethostname) { "logstash.local" }
+      allow(Time).to receive(:now) { Time.new('2015-10-09-09:00') }
     end
 
     it "should add tags to the filename if present" do
@@ -97,7 +97,7 @@ describe LogStash::Outputs::S3 do
 
     let(:fake_bucket) do
       s3 = double('S3Object')
-      s3.stub(:write)
+      allow(s3).to receive(:write)
       s3
     end
 
@@ -163,7 +163,7 @@ describe LogStash::Outputs::S3 do
 
     it "returns true if the tempfile is over the file_size limit" do
       Stud::Temporary.file do |tmp|
-        tmp.stub(:size) { 2024001 }
+        allow(tmp).to receive(:size) { 2024001 }
 
         s3.tempfile = tmp
         expect(s3.rotate_events_log?).to be(true)
@@ -172,7 +172,7 @@ describe LogStash::Outputs::S3 do
 
     it "returns false if the tempfile is under the file_size limit" do
       Stud::Temporary.file do |tmp|
-        tmp.stub(:size) { 100 }
+        allow(tmp).to receive(:size) { 100 }
 
         s3.tempfile = tmp
         expect(s3.rotate_events_log?).to eq(false)
