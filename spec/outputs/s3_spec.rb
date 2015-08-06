@@ -158,25 +158,54 @@ describe LogStash::Outputs::S3 do
   end
 
   describe "#rotate_events_log" do
-    let(:s3) { LogStash::Outputs::S3.new(minimal_settings.merge({ "size_file" => 1024 })) }
-    before { s3.register }
 
-    it "returns true if the tempfile is over the file_size limit" do
-      Stud::Temporary.file do |tmp|
-        allow(tmp).to receive(:size) { 2024001 }
+    context "having a single worker" do
+      let(:s3) { LogStash::Outputs::S3.new(minimal_settings.merge({ "size_file" => 1024 })) }
 
-        s3.tempfile = tmp
-        expect(s3.rotate_events_log?).to be(true)
+      before(:each) do
+        s3.register
+      end
+
+      it "returns true if the tempfile is over the file_size limit" do
+        Stud::Temporary.file do |tmp|
+          allow(tmp).to receive(:size) { 2024001 }
+
+          s3.tempfile = tmp
+          expect(s3.rotate_events_log?).to be(true)
+        end
+      end
+
+      it "returns false if the tempfile is under the file_size limit" do
+        Stud::Temporary.file do |tmp|
+          allow(tmp).to receive(:size) { 100 }
+
+          s3.tempfile = tmp
+          expect(s3.rotate_events_log?).to eq(false)
+        end
       end
     end
 
-    it "returns false if the tempfile is under the file_size limit" do
-      Stud::Temporary.file do |tmp|
-        allow(tmp).to receive(:size) { 100 }
+    context "having periodic rotations" do
 
+      let(:s3)  { LogStash::Outputs::S3.new(minimal_settings.merge({ "size_file" => 1024, "time_file" => 6e-10 })) }
+      let(:tmp) { Tempfile.new('s3_rotation_temp_file') }
+
+      before(:each) do
         s3.tempfile = tmp
-        expect(s3.rotate_events_log?).to eq(false)
+        s3.register
       end
+
+      after(:each) do
+        tmp.close
+        tmp.unlink
+      end
+
+      it "raises no error when periodic rotation happen" do
+        1000.times do
+          expect{ s3.rotate_events_log?}.not_to raise_error
+        end
+      end
+
     end
   end
 
