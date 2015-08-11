@@ -11,25 +11,24 @@ require "fileutils"
 
 # INFORMATION:
 #
-# This plugin was created for store the logstash's events into Amazon Simple Storage Service (Amazon S3).
-# For use it you needs authentications and an s3 bucket.
-# Be careful to have the permission to write file on S3's bucket and run logstash with super user for establish connection.
+# This plugin sends logstash events to Amazon Simple Storage Service (Amazon S3).
+# To use it you need to have the proper write premissions and a valid s3 bucket.
+# Make sure you have permissions to write files on S3's bucket.  Also be sure to run logstash as super user to establish a connection.
 #
-# S3 plugin allows you to do something complex, let's explain:)
 #
-# S3 outputs create temporary files into "/opt/logstash/S3_temp/". If you want, you can change the path at the start of register method.
-# This files have a special name, for example:
+# This plugin outputs temporary files to "/opt/logstash/S3_temp/". If you want, you can change the path at the start of register method.
+# These files have a special name, for example:
 #
 # ls.s3.ip-10-228-27-95.2013-04-18T10.00.tag_hello.part0.txt
 #
 # ls.s3 : indicate logstash plugin s3
 #
-# "ip-10-228-27-95" : indicate you ip machine, if you have more logstash and writing on the same bucket for example.
+# "ip-10-228-27-95" : indicates the ip of your machine.
 # "2013-04-18T10.00" : represents the time whenever you specify time_file.
-# "tag_hello" : this indicate the event's tag, you can collect events with the same tag.
+# "tag_hello" : this indicates the event's tag.
 # "part0" : this means if you indicate size_file then it will generate more parts if you file.size > size_file.
-#           When a file is full it will pushed on bucket and will be deleted in temporary directory.
-#           If a file is empty is not pushed, but deleted.
+#           When a file is full it will be pushed to a bucket and will be deleted from the temporary directory.
+#           If a file is empty is not pushed, it is not deleted.
 #
 # This plugin have a system to restore the previous temporary files if something crash.
 #
