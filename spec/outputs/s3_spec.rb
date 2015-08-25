@@ -12,7 +12,6 @@ describe LogStash::Outputs::S3 do
     # We stub all the calls from S3, for more information see:
     # http://ruby.awsblog.com/post/Tx2SU6TYJWQQLC3/Stubbing-AWS-Responses
     AWS.stub!
-
     Thread.abort_on_exception = true
   end
 
@@ -186,7 +185,6 @@ describe LogStash::Outputs::S3 do
     end
 
     context "having periodic rotations" do
-
       let(:s3)  { LogStash::Outputs::S3.new(minimal_settings.merge({ "size_file" => 1024, "time_file" => 6e-10 })) }
       let(:tmp) { Tempfile.new('s3_rotation_temp_file') }
 
@@ -196,27 +194,21 @@ describe LogStash::Outputs::S3 do
       end
 
       after(:each) do
-        tmp.close
+        s3.teardown
+        tmp.close 
         tmp.unlink
       end
 
       it "raises no error when periodic rotation happen" do
         1000.times do
-          expect{ s3.rotate_events_log?}.not_to raise_error
+          expect { s3.rotate_events_log? }.not_to raise_error
         end
       end
-
     end
   end
 
   describe "#move_file_to_bucket" do
-    let!(:s3) { LogStash::Outputs::S3.new(minimal_settings) }
-
-    before do
-      # Assume the AWS test credentials pass.
-      allow(s3).to receive(:test_s3_write)
-      s3.register
-    end
+    subject { LogStash::Outputs::S3.new(minimal_settings) }
 
     it "should always delete the source file" do
       tmp = Stud::Temporary.file
@@ -224,24 +216,24 @@ describe LogStash::Outputs::S3 do
       allow(File).to receive(:zero?).and_return(true)
       expect(File).to receive(:delete).with(tmp)
 
-      s3.move_file_to_bucket(tmp)
+      subject.move_file_to_bucket(tmp)
     end
 
     it 'should not upload the file if the size of the file is zero' do
       temp_file = Stud::Temporary.file
       allow(temp_file).to receive(:zero?).and_return(true)
 
-      expect(s3).not_to receive(:write_on_bucket)
-      s3.move_file_to_bucket(temp_file)
+      expect(subject).not_to receive(:write_on_bucket)
+      subject.move_file_to_bucket(temp_file)
     end
 
     it "should upload the file if the size > 0" do
       tmp = Stud::Temporary.file
 
       allow(File).to receive(:zero?).and_return(false)
-      expect(s3).to receive(:write_on_bucket)
+      expect(subject).to receive(:write_on_bucket)
 
-      s3.move_file_to_bucket(tmp)
+      subject.move_file_to_bucket(tmp)
     end
   end
 

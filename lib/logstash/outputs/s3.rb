@@ -313,7 +313,9 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     shutdown_upload_workers
     @periodic_rotation_thread.stop! if @periodic_rotation_thread
 
-    @tempfile.close
+    @file_rotation_lock.synchronize do
+      @tempfile.close unless @tempfile.nil? && @tempfile.closed?
+    end
     finished
   end
 
