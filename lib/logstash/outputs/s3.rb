@@ -304,19 +304,18 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       end
     rescue Errno::ENOSPC
       @logger.error("S3: No space left in temporary directory", :temporary_directory => @temporary_directory)
-      teardown
+      close
     end
   end
 
   public
-  def teardown
+  def close
     shutdown_upload_workers
     @periodic_rotation_thread.stop! if @periodic_rotation_thread
 
     @file_rotation_lock.synchronize do
       @tempfile.close unless @tempfile.nil? && @tempfile.closed?
     end
-    finished
   end
 
   private
