@@ -314,7 +314,6 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     @periodic_rotation_thread.stop! if @periodic_rotation_thread
 
     @tempfile.close
-    finished
   end
 
   private
