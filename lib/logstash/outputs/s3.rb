@@ -473,8 +473,13 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   private
   def delete_on_bucket(filename)
     bucket = @s3.buckets[@bucket]
+    
+    first = Pathname.new @temporary_directory
+    second = Pathname.new filename
 
-    remote_filename = "#{@prefix}#{File.basename(filename)}"
+    remote_filename_path = second.relative_path_from first
+    
+    remote_filename = remote_filename_path.to_s
 
     @logger.debug("S3: delete file from bucket", :remote_filename => remote_filename, :bucket => @bucket)
 
