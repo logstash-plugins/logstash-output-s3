@@ -50,7 +50,7 @@ describe LogStash::Outputs::S3 do
       s3.register
 
       expect(Dir.exist?(temporary_directory)).to eq(true)
-      s3.teardown
+      s3.close
       FileUtils.rm_r(temporary_directory)
     end
 
@@ -194,7 +194,7 @@ describe LogStash::Outputs::S3 do
       end
 
       after(:each) do
-        s3.teardown
+        s3.close
         tmp.close 
         tmp.unlink
       end
@@ -328,7 +328,7 @@ describe LogStash::Outputs::S3 do
           s3.receive(event)
           event_count += 1
         end
-        s3.teardown
+        s3.close
 
         generated_files = Dir[File.join(temporary_directory, 'ls.*.txt')]
 

@@ -22,10 +22,9 @@ Gem::Specification.new do |s|
   # Gem dependencies
   s.add_runtime_dependency "logstash-core", "~> 2.0.0.snapshot"
   s.add_runtime_dependency 'logstash-mixin-aws'
-  s.add_runtime_dependency 'stud', '~> 0.0.18'
+  s.add_runtime_dependency 'stud', '~> 0.0.22'
   s.add_development_dependency 'logstash-devutils'
   s.add_development_dependency 'logstash-input-generator'
-  s.add_development_dependency 'logstash-input-stdin'
   s.add_development_dependency 'logstash-codec-line'
 end
 
