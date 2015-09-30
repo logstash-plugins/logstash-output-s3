@@ -13,7 +13,7 @@ require "fileutils"
 # INFORMATION:
 #
 # This plugin sends logstash events to Amazon Simple Storage Service (Amazon S3).
-# To use it you need to have the proper write premissions and a valid s3 bucket.
+# To using it you need to have the proper write premissions and a valid s3 bucket.
 # Make sure you have permissions to write files on S3's bucket.  Also be sure to run logstash as super user to establish a connection.
 #
 #
