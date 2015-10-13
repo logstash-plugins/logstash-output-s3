@@ -110,6 +110,16 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # Specify how many workers to use to upload the files to S3
   config :upload_workers_count, :validate => :number, :default => 1
 
+  # Define tags to be appended to the file on the S3 bucket.
+  #
+  # Example:
+  # tags => ["elasticsearch", "logstash", "kibana"]
+  #
+  # Will generate this file:
+  # "ls.s3.logstash.local.2015-01-01T00.00.tag_elasticsearch.logstash.kibana.part0.txt"
+  # 
+  config :tags, :validate => :array, :default => []
+
   # Exposed attributes for testing purpose.
   attr_accessor :tempfile
   attr_reader :page_counter
