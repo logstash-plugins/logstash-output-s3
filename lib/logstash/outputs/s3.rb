@@ -60,6 +60,7 @@ require "fileutils"
 #      time_file => 5                           (optional)
 #      format => "plain"                        (optional)
 #      canned_acl => "private"                  (optional. Options are "private", "public_read", "public_read_write", "authenticated_read". Defaults to "private" )
+#      content_encoding => "utf-8"              (optional)
 #    }
 #
 class LogStash::Outputs::S3 < LogStash::Outputs::Base
@@ -77,7 +78,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # AWS endpoint_region
   config :endpoint_region, :validate => ["us-east-1", "us-west-1", "us-west-2",
                                          "eu-west-1", "ap-southeast-1", "ap-southeast-2",
-                                        "ap-northeast-1", "sa-east-1", "us-gov-west-1"], :deprecated => 'Deprecated, use region instead.'
+                                         "ap-northeast-1", "sa-east-1", "us-gov-west-1"], :deprecated => 'Deprecated, use region instead.'
 
   # Set the size of file in bytes, this means that files on bucket when have dimension > file_size, they are stored in two or more file.
   # If you have tags then it will generate a specific size file for every tags
@@ -120,6 +121,9 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # 
   config :tags, :validate => :array, :default => []
 
+  # Specify file encoding
+  config :content_encoding, :validate => :string, :default => 'utf-8'
+
   # Exposed attributes for testing purpose.
   attr_accessor :tempfile
   attr_reader :page_counter
@@ -133,7 +137,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   def aws_service_endpoint(region)
     # Make the deprecated endpoint_region work
     # TODO: (ph) Remove this after deprecation.
-    
+
     if @endpoint_region
       region_to_use = @endpoint_region
     else
@@ -141,7 +145,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     end
 
     return {
-      :s3_endpoint => region_to_use == 'us-east-1' ? 's3.amazonaws.com' : "s3-#{region_to_use}.amazonaws.com"
+        :s3_endpoint => region_to_use == 'us-east-1' ? 's3.amazonaws.com' : "s3-#{region_to_use}.amazonaws.com"
     }
   end
 
@@ -158,14 +162,14 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       begin
         # prepare for write the file
         object = bucket.objects[remote_filename]
-        object.write(fileIO, :acl => @canned_acl)
+        object.write(fileIO, :acl => @canned_acl, :content_encoding => @content_encoding)
       rescue AWS::Errors::Base => error
         @logger.error("S3: AWS error", :error => error)
         raise LogStash::Error, "AWS Configuration Error, #{error}"
       end
     end
 
-    @logger.debug("S3: has written remote file in bucket with canned ACL", :remote_filename => remote_filename, :bucket  => @bucket, :canned_acl => @canned_acl)
+    @logger.debug("S3: has written remote file in bucket with canned ACL", :remote_filename => remote_filename, :bucket  => @bucket, :canned_acl => @canned_acl, :content_encoding => @content_encoding)
   end
 
   # This method is used for create new empty temporary files for use. Flag is needed for indicate new subsection time_file.
@@ -240,7 +244,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       File.delete(test_filename)
     end
   end
-  
+
   public
   def restore_from_crashes
     @logger.debug("S3: is attempting to verify previous crashes...")
@@ -288,7 +292,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   public
   def receive(event)
-    
+
     @codec.encode(event)
   end
 
@@ -346,7 +350,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       else
         @logger.debug("S3: tempfile file size report.", :tempfile_size => @tempfile.size, :size_file => @size_file)
       end
-    end 
+    end
 
     write_to_tempfile(encoded_event)
   end
