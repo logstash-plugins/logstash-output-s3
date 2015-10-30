@@ -3,6 +3,7 @@ require "logstash/outputs/base"
 require "logstash/namespace"
 require "logstash/plugin_mixins/aws_config"
 require "stud/temporary"
+require "stud/task"
 require "socket" # for Socket.gethostname
 require "thread"
 require "tmpdir"
