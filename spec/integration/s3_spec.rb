@@ -23,7 +23,7 @@ describe LogStash::Outputs::S3, :integration => true, :s3 => true do
       s3output.s3
   end
 
-  after(:all) do
+  after(:each) do
     delete_matching_keys_on_bucket('studtmp')
     delete_matching_keys_on_bucket('my-prefix')
   end
@@ -36,7 +36,7 @@ describe LogStash::Outputs::S3, :integration => true, :s3 => true do
   end
 
   describe "#write_on_bucket" do
-    after(:all) do
+    after(:each) do
       File.unlink(fake_data.path)
     end
 
