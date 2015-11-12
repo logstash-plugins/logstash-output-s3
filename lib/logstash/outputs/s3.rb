@@ -109,6 +109,10 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # Specify how many workers to use to upload the files to S3
   config :upload_workers_count, :validate => :number, :default => 1
 
+  # The version of the S3 signature hash to use. Normally uses the internal client default, can be explicitly
+  # specified here
+  config :signature_version, :validate => ['v2', 'v4']
+
   # Define tags to be appended to the file on the S3 bucket.
   #
   # Example:
@@ -126,7 +130,19 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   def aws_s3_config
     @logger.info("Registering s3 output", :bucket => @bucket, :endpoint_region => @region)
-    @s3 = AWS::S3.new(aws_options_hash)
+    @s3 = AWS::S3.new(full_options)
+  end
+
+  def full_options
+    aws_options_hash.merge(signature_options)
+  end
+
+  def signature_options
+    if @signature_version
+      {:s3_signature_version => @signature_version}
+    else
+      {}
+    end
   end
 
   def aws_service_endpoint(region)

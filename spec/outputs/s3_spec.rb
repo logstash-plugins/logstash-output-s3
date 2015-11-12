@@ -31,6 +31,18 @@ describe LogStash::Outputs::S3 do
       s3 = LogStash::Outputs::S3.new(config.merge({ "region" => 'sa-east-1' }))
       expect(s3.aws_options_hash).to include(:s3_endpoint => "s3-sa-east-1.amazonaws.com")
     end
+
+    describe "signature version" do
+      it "should set the signature version if specified" do
+        s3 = LogStash::Outputs::S3.new(config.merge({ "signature_version" => 'v4' }))
+        expect(s3.full_options[:s3_signature_version]).to eql('v4')
+      end
+
+      it "should omit the option completely if not specified" do
+        s3 = LogStash::Outputs::S3.new(config)
+        expect(s3.full_options.has_key?(:s3_signature_version)).to eql(false)
+      end
+    end
   end
 
   describe "#register" do
