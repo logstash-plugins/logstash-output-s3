@@ -133,6 +133,15 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # Specify the content encoding. Supports ("gzip"). Defaults to "none"
   config :encoding, :validate => ["none", "gzip"], :default => "none"
 
+  # If set, this will be the first row of every file pushed to S3
+  #
+  # Ensure that you are setting this to the actual number of columns in your data.  It is not dynamic
+  # and will not help you out if the underlying schema changes.  
+  #
+  # Recommend to use wtih this a filter that produces an explicit set of fields no matter the input
+  # event
+  config :header_row, :validate => :string, :default => ""
+
   # Exposed attributes for testing purpose.
   attr_accessor :tempfile
   attr_reader :page_counter
@@ -203,6 +212,11 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
         @tempfile = Zlib::GzipWriter.open(filename)
       else
         @tempfile = File.open(filename, "a")
+      end
+      
+      #  header row processing
+      if @headerrow.eql? "" 
+        @tempfile.syswrite(@headerrow)
       end
     end
   end
