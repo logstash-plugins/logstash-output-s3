@@ -1,3 +1,6 @@
+## 2.0.3
+ - Adds ability to set a file header
+
 ## 2.0.2
  - Fixes an issue when tags were defined #39
 ## 2.0.0
