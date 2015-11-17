@@ -12,13 +12,16 @@ require "fileutils"
 
 # INFORMATION:
 #
-# This plugin sends logstash events to Amazon Simple Storage Service (Amazon S3).
-# To use it you need to have the proper write premissions and a valid s3 bucket.
-# Make sure you have permissions to write files on S3's bucket.  Also be sure to run logstash as super user to establish a connection.
+# This plugin batches and uploads logstash events into Amazon Simple Storage Service (Amazon S3).
+# 
+# Requirements: 
+# * Amazon S3 Bucket and S3 Access Permissions (Typically access_key_id and secret_access_key)
+# * S3 PutObject permission
+# * Run logstash as superuser to establish connection
 #
+# S3 outputs create temporary files into "/opt/logstash/S3_temp/". If you want, you can change the path at the start of register method.
 #
-# This plugin outputs temporary files to "/opt/logstash/S3_temp/". If you want, you can change the path at the start of register method.
-# These files have a special name, for example:
+# S3 output files have the following format
 #
 # ls.s3.ip-10-228-27-95.2013-04-18T10.00.tag_hello.part0.txt
 #
@@ -28,23 +31,28 @@ require "fileutils"
 # "2013-04-18T10.00" : represents the time whenever you specify time_file.
 # "tag_hello" : this indicates the event's tag.
 # "part0" : this means if you indicate size_file then it will generate more parts if you file.size > size_file.
-#           When a file is full it will be pushed to a bucket and will be deleted from the temporary directory.
-#           If a file is empty is not pushed, it is not deleted.
+#           When a file is full it will be pushed to the bucket and then deleted from the temporary directory.
+#           If a file is empty, it is simply deleted.  Empty files will not be pushed
 #
-# This plugin have a system to restore the previous temporary files if something crash.
+# Crash Recovery:
+# * This plugin will recover and upload temporary log files after crash/abnormal termination
 #
-##[Note] :
+##[Note regarding time_file and size_file] :
 #
-## If you specify size_file and time_file then it will create file for each tag (if specified), when time_file or
-## their size > size_file, it will be triggered then they will be pushed on s3's bucket and will delete from local disk.
-## If you don't specify size_file, but time_file then it will create only one file for each tag (if specified).
-## When time_file it will be triggered then the files will be pushed on s3's bucket and delete from local disk.
+# Both time_file and size_file settings can trigger a log "file rotation"
+# A log rotation pushes the current log "part" to s3 and deleted from local temporary storage.
 #
-## If you don't specify time_file, but size_file  then it will create files for each tag (if specified),
-## that will be triggered when their size > size_file, then they will be pushed on s3's bucket and will delete from local disk.
+## If you specify BOTH size_file and time_file then it will create file for each tag (if specified). 
+## When EITHER time_file minutes have elapsed OR log file size > size_file, a log rotation is triggered.
+##
+## If you ONLY specify time_file but NOT file_size, one file for each tag (if specified) will be created..
+## When time_file minutes elapses, a log rotation will be triggered.
 #
-## If you don't specific size_file and time_file you have a curios mode. It will create only one file for each tag (if specified).
-## Then the file will be rest on temporary directory and don't will be pushed on bucket until we will restart logstash.
+## If you ONLY specify size_file, but NOT time_file, one files for each tag (if specified) will be created.
+## When size of log file part > size_file, a log rotation will be triggered.
+#
+## If NEITHER size_file nor time_file is specified, ONLY one file for each tag (if specified) will be created.
+## WARNING: Since no log rotation is triggered, S3 Upload will only occur when logstash restarts.
 #
 #
 # #### Usage:
@@ -54,10 +62,11 @@ require "fileutils"
 #    s3{
 #      access_key_id => "crazy_key"             (required)
 #      secret_access_key => "monkey_access_key" (required)
-#      endpoint_region => "eu-west-1"           (required)
+#      endpoint_region => "eu-west-1"           (required) - Deprecated
 #      bucket => "boss_please_open_your_bucket" (required)
-#      size_file => 2048                        (optional)
-#      time_file => 5                           (optional)
+#      size_file => 2048                        (optional) - Bytes
+#      time_file => 5                           (optional) - Minutes
+#      format => "plain"                        (optional)
 #      canned_acl => "private"                  (optional. Options are "private", "public_read", "public_read_write", "authenticated_read". Defaults to "private" )
 #    }
 #
@@ -83,7 +92,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   ##NOTE: define size of file is the better thing, because generate a local temporary file on disk and then put it in bucket.
   config :size_file, :validate => :number, :default => 0
 
-  # Set the time, in minutes, to close the current sub_time_section of bucket.
+  # Set the time, in MINUTES, to close the current sub_time_section of bucket.
   # If you define file_size you have a number of files in consideration of the section and the current tag.
   # 0 stay all time on listerner, beware if you specific 0 and size_file 0, because you will not put the file on bucket,
   # for now the only thing this plugin can do is to put the file when logstash restart.
@@ -103,7 +112,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # default to the current OS temporary directory in linux /tmp/logstash
   config :temporary_directory, :validate => :string, :default => File.join(Dir.tmpdir, "logstash")
 
-  # Specify a prefix to the uploaded filename, this can simulate directories on S3
+  # Specify a prefix to the uploaded filename, this can simulate directories on S3.  Prefix does not require leading slash.
   config :prefix, :validate => :string, :default => ''
 
   # Specify how many workers to use to upload the files to S3
@@ -242,11 +251,11 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   public
   def restore_from_crashes
-    @logger.debug("S3: is attempting to verify previous crashes...")
+    @logger.debug("S3: Checking for temp files from a previoius crash...")
 
     Dir[File.join(@temporary_directory, "*.#{TEMPFILE_EXTENSION}")].each do |file|
       name_file = File.basename(file)
-      @logger.warn("S3: have found temporary file the upload process crashed, uploading file to S3.", :filename => name_file)
+      @logger.warn("S3: Found temporary file from crash.  Uploading file to S3.", :filename => name_file)
       move_file_to_bucket_async(file)
     end
   end
@@ -255,7 +264,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   def move_file_to_bucket(file)
     if !File.zero?(file)
       write_on_bucket(file)
-      @logger.debug("S3: file was put on the upload thread", :filename => File.basename(file), :bucket => @bucket)
+      @logger.debug("S3: File was put on the upload thread", :filename => File.basename(file), :bucket => @bucket)
     end
 
     begin
