@@ -8,7 +8,7 @@ require "socket" # for Socket.gethostname
 require "thread"
 require "tmpdir"
 require "fileutils"
-require 'pathname'
+require "pathname"
 
 
 # INFORMATION:
@@ -60,7 +60,7 @@ require 'pathname'
 #      size_file => 2048                        (optional)
 #      time_file => 5                           (optional)
 #      canned_acl => "private"                  (optional. Options are "private", "public_read", "public_read_write", "authenticated_read". Defaults to "private" )
-#      no_event_wait => 5                       (optional. Defines the number of time_file s3 upload events that may go with no eventns for the prefix, before cleaning up the watch on that)       
+#      no_event_wait => 5                       (optional. Defines the number of time_file s3 upload events that may go with no events for the prefix, before cleaning up the watch on that)       
 #    }
 #
 class LogStash::Outputs::S3 < LogStash::Outputs::Base
@@ -144,8 +144,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     # find and use the bucket
     bucket = @s3.buckets[@bucket]
     
-    first = Pathname.new @temporary_directory
-    second = Pathname.new file
+    first = Pathname.new(@temporary_directory)
+    second = Pathname.new(file)
 
     remote_filename_path = second.relative_path_from first
     
@@ -176,11 +176,9 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
         @tempfile[prefix].close
       end
    
-      if @prefixes.include? prefix
+      if @prefixes.include?(prefix)
          dirname = File.dirname(filename)
-         unless File.directory?(dirname)
-           FileUtils.mkdir_p(dirname)
-         end
+         FileUtils.mkdir_p(dirname) unless File.directory?(dirname) 
          @logger.debug("S3: Creating a new temporary file", :filename => filename)
          @tempfile[prefix] = File.open(filename, "a")
       end
@@ -215,8 +213,6 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
     test_s3_write
     restore_from_crashes if @restore == true
-    #reset_page_counter
-    #create_temporary_file
     configure_periodic_rotation if time_file != 0
     configure_upload_workers
 
@@ -259,7 +255,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   end
 
   public 
-  def shouldcleanup(prefix)
+  def need_cleanup?(prefix)
      return @empty_uploads[prefix] > @no_event_wait
   end
 
@@ -270,8 +266,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
     basepath = Pathname.new @temporary_directory
     dirname = Pathname.new File.dirname(file)
-    prefixpath = dirname.relative_path_from basepath
-    prefix = prefixpath.to_s
+    prefix = dirname.relative_path_from(basepath).to_s
     @logger.debug("S3: moving the file for prefix", :prefix => prefix)
 
     if !File.zero?(file)
@@ -297,9 +292,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       @logger.error("S3: Logstash doesnt have the permission to delete the file in the temporary directory.", :filename => File.basename(file), :temporary_directory => @temporary_directory)
     end
 
-    if shouldcleanup(prefix)
-        cleanprefix(prefix)
-    end 
+    clean_prefix(prefix) if need_cleanup?(prefix)
+
   end
 
   public
@@ -358,7 +352,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     shutdown_upload_workers
     @periodic_rotation_thread.stop! if @periodic_rotation_thread
     
-    for prefix in @prefixes
+    @prefixes.each do |prefix|
        @file_rotation_lock[prefix].synchronize do
          @tempfile[prefix].close unless @tempfile[prefix].nil? && @tempfile[prefix].closed?
        end
@@ -374,7 +368,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   private
   def handle_event(encoded_event, event)
     actualprefix = event.sprintf(@prefix)
-    if not @prefixes.to_a().include? actualprefix
+    if !@prefixes.include? actualprefix
        @file_rotation_lock[actualprefix] = Mutex.new
        @prefixes.add(actualprefix)
        reset_page_counter(actualprefix)
@@ -416,7 +410,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   end
 
   private
-  def cleanprefix(prefix)
+  def clean_prefix(prefix)
       path = File.join(@temporary_directory, prefix)
       @logger.debug("cleaning the directory and prefix ", :dir => path, :prefix => prefix)
       @file_rotation_lock[prefix].synchronize do
