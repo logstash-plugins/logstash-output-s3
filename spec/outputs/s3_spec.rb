@@ -70,24 +70,23 @@ describe LogStash::Outputs::S3 do
   describe "#generate_temporary_filename" do
     before do
       allow(Socket).to receive(:gethostname) { "logstash.local" }
-      allow(Time).to receive(:now) { Time.new('2015-10-09-09:00') }
     end
 
     it "should add tags to the filename if present" do
       config = minimal_settings.merge({ "tags" => ["elasticsearch", "logstash", "kibana"], "temporary_directory" => "/tmp/logstash"})
       s3 = LogStash::Outputs::S3.new(config)
-      expect(s3.get_temporary_filename).to eq("ls.s3.logstash.local.2015-01-01T00.00.tag_elasticsearch.logstash.kibana.part0.txt")
+      expect(s3.get_temporary_filename).to match(/^ls\.s3\.logstash\.local\.\d{4}-\d{2}\-\d{2}T\d{2}\.\d{2}\.tag_#{config["tags"].join("\.")}\.part0\.txt\Z/)
     end
 
     it "should not add the tags to the filename" do
       config = minimal_settings.merge({ "tags" => [], "temporary_directory" => "/tmp/logstash" })
       s3 = LogStash::Outputs::S3.new(config)
-      expect(s3.get_temporary_filename(3)).to eq("ls.s3.logstash.local.2015-01-01T00.00.part3.txt")
+      expect(s3.get_temporary_filename(3)).to match(/^ls\.s3\.logstash\.local\.\d{4}-\d{2}\-\d{2}T\d{2}\.\d{2}\.part3\.txt\Z/)
     end
 
     it "normalized the temp directory to include the trailing slash if missing" do
       s3 = LogStash::Outputs::S3.new(minimal_settings.merge({ "temporary_directory" => "/tmp/logstash" }))
-      expect(s3.get_temporary_filename).to eq("ls.s3.logstash.local.2015-01-01T00.00.part0.txt")
+      expect(s3.get_temporary_filename).to match(/^ls\.s3\.logstash\.local\.\d{4}-\d{2}\-\d{2}T\d{2}\.\d{2}\.part0\.txt\Z/)
     end
   end
 
