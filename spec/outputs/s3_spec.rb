@@ -302,8 +302,8 @@ describe LogStash::Outputs::S3 do
 
     it "doesn't skip events if using the time_file option", :tag => :slow do
       Stud::Temporary.directory do |temporary_directory|
-        time_file = rand(5..10)
-        number_of_rotation = rand(4..10)
+        time_file = rand(1..2)
+        number_of_rotation = rand(2..5)
 
         config = {
           "time_file" => time_file,
@@ -314,7 +314,7 @@ describe LogStash::Outputs::S3 do
 
         s3 = LogStash::Outputs::S3.new(minimal_settings.merge(config))
         # Make the test run in seconds intead of minutes..
-        allow(s3).to receive(:periodic_interval).and_return(time_file)
+        expect(s3).to receive(:periodic_interval).and_return(time_file)
         s3.register
 
         # Force to have a few files rotation
