@@ -1,3 +1,6 @@
+## 2.0.4
+ - Remove the `Time.now` stub in the spec, it was conflicting with other test when running inside the default plugins test #63
+ - Make the spec run faster by adjusting the values of time rotation test.
 ## 2.0.2
  - Fixes an issue when tags were defined #39
 ## 2.0.0
