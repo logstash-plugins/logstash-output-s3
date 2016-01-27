@@ -28,6 +28,15 @@ describe LogStash::Outputs::S3, :integration => true, :s3 => true do
     delete_matching_keys_on_bucket('my-prefix')
   end
 
+  describe '#close' do
+    it 'flushes to s3' do
+      s3 = LogStash::Outputs::S3.new(minimal_settings)
+      s3.register
+      expect(s3).to receive(:move_file_to_bucket)
+      s3.close
+    end
+  end
+
   describe "#register" do
     it "write a file on the bucket to check permissions" do
       s3 = LogStash::Outputs::S3.new(minimal_settings)
