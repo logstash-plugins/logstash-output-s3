@@ -99,6 +99,9 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   config :canned_acl, :validate => ["private", "public_read", "public_read_write", "authenticated_read"],
          :default => "private"
 
+  # Specifies wether or not to use S3's AES256 server side encryption. Defaults to false.
+  config :server_side_encryption, :validate => :boolean, :default => false
+
   # Set the directory where logstash will store the tmp files before sending it to S3
   # default to the current OS temporary directory in linux /tmp/logstash
   config :temporary_directory, :validate => :string, :default => File.join(Dir.tmpdir, "logstash")
@@ -173,7 +176,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       begin
         # prepare for write the file
         object = bucket.objects[remote_filename]
-        object.write(fileIO, :acl => @canned_acl)
+        object.write(fileIO, :acl => @canned_acl, :server_side_encryption => @server_side_encryption ? :aes256 : nil)
       rescue AWS::Errors::Base => error
         @logger.error("S3: AWS error", :error => error)
         raise LogStash::Error, "AWS Configuration Error, #{error}"
