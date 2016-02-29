@@ -1,4 +1,4 @@
-# Logstash Plugin
+# Logstash Output S3
 
 [![Build
 Status](http://build-eu-00.elastic.co/view/LS%20Plugins/view/LS%20Outputs/job/logstash-plugin-output-s3-unit/badge/icon)](http://build-eu-00.elastic.co/view/LS%20Plugins/view/LS%20Outputs/job/logstash-plugin-output-s3-unit/)
@@ -7,7 +7,30 @@ This is a plugin for [Logstash](https://github.com/elastic/logstash).
 
 It is fully free and fully open source. The license is Apache 2.0, meaning you are pretty much free to use it however you want in whatever way.
 
-## Documentation
+## How to use it
+1. Download the source and build the gem
+1. Install the plugin, e.g: `$ /opt/logstash/bin/plugin install /path/to/plugin/logstash-output-s3-X.Y.Z.gem`
+1. Configure it in your logstash.conf file:
+```
+input {
+  # Stuff
+}
+filter {
+  # Other stuff
+}
+output {
+  s3 {
+    access_key_id => "YOUR_AWS_ACCESS_KEY_ID"
+    secret_access_key => "YOUR_AWS_SECRET_ACCESS_KEY"
+    region => "AN_AWS_REGION"
+    bucket => "YOUR_S3_BUCKET_NAME"
+    encoding => "gzip"
+    time_file => 60
+  }
+}
+```
+
+## Developer documentation
 
 Logstash provides infrastructure to automatically generate documentation for this plugin. We use the asciidoc format to write documentation so any comments in the source code will be first converted into asciidoc and then into html. All plugin documentation are placed under one [central location](http://www.elastic.co/guide/en/logstash/current/).
 
