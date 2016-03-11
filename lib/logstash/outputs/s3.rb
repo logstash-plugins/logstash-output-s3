@@ -134,6 +134,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   attr_reader :page_counter
   attr_reader :s3
 
+  attr_accessor :original_prefix
+
   def aws_s3_config
     @logger.info("Registering s3 output", :bucket => @bucket, :endpoint_region => @region)
     @s3 = AWS::S3.new(full_options)
@@ -221,6 +223,10 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     if @prefix && @prefix =~ S3_INVALID_CHARACTERS
       @logger.error("S3: prefix contains invalid characters", :prefix => @prefix, :contains => S3_INVALID_CHARACTERS)
       raise LogStash::ConfigurationError, "S3: prefix contains invalid characters"
+    end
+
+    if @original_prefix.nil?
+      @original_prefix = @prefix
     end
 
     if !Dir.exist?(@temporary_directory)
@@ -349,9 +355,9 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     end
   end
 
-  public 
+  public
   def build_prefix(event)
-    @prefix = event.sprintf(@prefix)
+    @prefix = event.sprintf(@original_prefix)
   end
 
   private
