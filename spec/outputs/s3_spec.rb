@@ -206,7 +206,7 @@ describe LogStash::Outputs::S3 do
 
       after(:each) do
         s3.close
-        tmp.close 
+        tmp.close
         tmp.unlink
       end
 
@@ -349,6 +349,25 @@ describe LogStash::Outputs::S3 do
         expect(generated_files.count).to be_within(number_of_rotation).of(number_of_rotation + 1)
         expect(events_written_count).to eq(event_count)
       end
+    end
+  end
+
+  describe "#build_prefix" do
+    it "should render event fields and date in prefix" do
+      config = {
+        "prefix" => "foo/%{foo}/%{+yyyyMMdd}/"
+      }
+
+      s3 = LogStash::Outputs::S3.new(config)
+
+      data = {"foo" => "bar", "@timestamp" => "2016-02-17T02:52:17.929Z"}
+      event = LogStash::Event.new(data)
+
+      s3.original_prefix = s3.prefix
+
+      s3.build_prefix(event)
+
+      expect(s3.prefix).to eql('foo/bar/20160217/')
     end
   end
 end

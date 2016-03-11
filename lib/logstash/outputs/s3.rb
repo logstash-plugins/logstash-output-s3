@@ -104,6 +104,12 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   config :temporary_directory, :validate => :string, :default => File.join(Dir.tmpdir, "logstash")
 
   # Specify a prefix to the uploaded filename, this can simulate directories on S3
+  # Event fields can be used here, like `path/to/bucket/folder/%{host}/%{application}`
+  # One may also utilize the path option for date-based log
+  # rotation via the joda time format. This will use the event
+  # timestamp.
+  # E.g.: `prefix => "test/%{+YYYYMMdd}/"` to create
+  # `test/20160216/`
   config :prefix, :validate => :string, :default => ''
 
   # Specify how many workers to use to upload the files to S3
@@ -127,6 +133,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   attr_accessor :tempfile
   attr_reader :page_counter
   attr_reader :s3
+
+  attr_accessor :original_prefix
 
   def aws_s3_config
     @logger.info("Registering s3 output", :bucket => @bucket, :endpoint_region => @region)
@@ -217,6 +225,10 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       raise LogStash::ConfigurationError, "S3: prefix contains invalid characters"
     end
 
+    if @original_prefix.nil?
+      @original_prefix = @prefix
+    end
+
     if !Dir.exist?(@temporary_directory)
       FileUtils.mkdir_p(@temporary_directory)
     end
@@ -303,7 +315,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   public
   def receive(event)
-
+    build_prefix(event)
     @codec.encode(event)
   end
 
@@ -341,6 +353,11 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     @file_rotation_lock.synchronize do
       @tempfile.close unless @tempfile.nil? && @tempfile.closed?
     end
+  end
+
+  public
+  def build_prefix(event)
+    @prefix = event.sprintf(@original_prefix)
   end
 
   private

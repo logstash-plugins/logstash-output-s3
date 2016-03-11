@@ -1,3 +1,5 @@
+## 2.0.6
+ - Feature to support dynamic prefix
 ## 2.0.5
  - Support signature_version option for v4 S3 keys
 ## 2.0.4
