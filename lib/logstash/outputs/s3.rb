@@ -104,11 +104,9 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   config :temporary_directory, :validate => :string, :default => File.join(Dir.tmpdir, "logstash")
 
   # Specify a prefix to the uploaded filename, this can simulate directories on S3
-  # Event fields can be used here, like `path/to/bucket/folder/%{host}/%{application}`
   # One may also utilize the path option for date-based log
-  # rotation via the joda time format. This will use the event
-  # timestamp.
-  # E.g.: `prefix => "test/%{+YYYYMMdd}/"` to create
+  # rotation. This will use the event timestamp.
+  # E.g.: `prefix => "test/%Y%m%d/"` to create
   # `test/20160216/`
   config :prefix, :validate => :string, :default => ''
 
@@ -172,6 +170,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   def write_on_bucket(file)
     # find and use the bucket
     bucket = @s3.buckets[@bucket]
+
+    build_prefix(Time.now)
 
     remote_filename = "#{@prefix}#{File.basename(file)}"
 
@@ -315,7 +315,6 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   public
   def receive(event)
-    build_prefix(event)
     @codec.encode(event)
   end
 
@@ -356,8 +355,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   end
 
   public
-  def build_prefix(event)
-    @prefix = event.sprintf(@original_prefix)
+  def build_prefix(datetime)
+    @prefix = datetime.strftime(@original_prefix)
   end
 
   private

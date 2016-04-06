@@ -355,17 +355,14 @@ describe LogStash::Outputs::S3 do
   describe "#build_prefix" do
     it "should render event fields and date in prefix" do
       config = {
-        "prefix" => "foo/%{foo}/%{+yyyyMMdd}/"
+        "prefix" => "foo/bar/%Y%m%d/"
       }
 
       s3 = LogStash::Outputs::S3.new(config)
 
-      data = {"foo" => "bar", "@timestamp" => "2016-02-17T02:52:17.929Z"}
-      event = LogStash::Event.new(data)
-
       s3.original_prefix = s3.prefix
 
-      s3.build_prefix(event)
+      s3.build_prefix(Time.new(2016, 02, 17))
 
       expect(s3.prefix).to eql('foo/bar/20160217/')
     end
