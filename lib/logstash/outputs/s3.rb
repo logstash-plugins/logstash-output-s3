@@ -156,7 +156,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     end
 
     return {
-      :s3_endpoint => region_to_use == 'us-east-1' ? 's3.amazonaws.com' : "s3-#{region_to_use}.amazonaws.com"
+      :s3_endpoint => region_to_use == 'us-east-1' ? 's3.amazonaws.com' : ( region_to_use == 'cn-north-1' ? "s3.#{region_to_use}.amazonaws.com.cn" : "s3-#{region_to_use}.amazonaws.com")
     }
   end
 
