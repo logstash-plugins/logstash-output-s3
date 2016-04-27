@@ -27,9 +27,12 @@ require "fileutils"
 #
 # ls.s3 : indicate logstash plugin s3
 #
-# "ip-10-228-27-95" : indicates the ip of your machine.
+# "ip-10-228-27-95" : indicates the hostname of your machine.
+#
 # "2013-04-18T10.00" : represents the time whenever you specify time_file.
+#
 # "tag_hello" : this indicates the event's tag.
+#
 # "part0" : this means if you indicate size_file then it will generate more parts if you file.size > size_file.
 #           When a file is full it will be pushed to the bucket and then deleted from the temporary directory.
 #           If a file is empty, it is simply deleted.  Empty files will not be pushed
