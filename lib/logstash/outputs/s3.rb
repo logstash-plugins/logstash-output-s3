@@ -337,7 +337,18 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   public
   def rotate_events_log?
     @file_rotation_lock.synchronize do
-      @tempfile.tell > @size_file
+      tempfile_size > @size_file
+    end
+  end
+
+  private
+  def tempfile_size
+    if @tempfile.instance_of? File
+      @tempfile.size
+    elsif @tempfile.instance_of? Zlib::GzipWriter
+      @tempfile.tell
+    else
+      raise LogStash::Error, "Unable to get size of temp file of type #{@tempfile.class}"
     end
   end
 
@@ -390,7 +401,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
         # send to s3
         move_file_to_bucket_async(tempfile_path)
       else
-        @logger.debug("S3: tempfile file size report.", :tempfile_size => @tempfile.tell, :size_file => @size_file)
+        @logger.debug("S3: tempfile file size report.", :tempfile_size => tempfile_size, :size_file => @size_file)
       end
     end
 
