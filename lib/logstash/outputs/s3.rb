@@ -358,7 +358,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   private
   def shutdown_upload_workers
     @logger.debug("S3: Gracefully shutdown the upload workers")
-    @upload_queue << LogStash::ShutdownEvent
+    @upload_queue << LogStash::SHUTDOWN
   end
 
   private
@@ -404,7 +404,12 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
         while true do
           @logger.debug("S3: upload worker is waiting for a new file to upload.", :worker_id => worker_id)
 
-          upload_worker
+          begin
+            upload_worker
+          rescue Exception => ex
+            @logger.error('upload_worker unhandled exception', :ex => ex, :backtrace => ex.backtrace)
+            raise LogStash::Error, 'S3: uploader thread exited unexpectedly'
+          end
         end
       end
     end
@@ -412,15 +417,23 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   private
   def upload_worker
-    file = @upload_queue.deq
+    file = nil
+    begin
+      file = @upload_queue.deq
 
-    case file
-      when LogStash::ShutdownEvent
+      if file.is_a? LogStash::ShutdownEvent
         @logger.debug("S3: upload worker is shutting down gracefuly")
-        @upload_queue.enq(LogStash::ShutdownEvent)
+        @upload_queue.enq(LogStash::SHUTDOWN)
       else
         @logger.debug("S3: upload working is uploading a new file", :filename => File.basename(file))
         move_file_to_bucket(file)
+      end
+    rescue Exception => ex
+      @logger.error("failed to upload, will re-enqueue #{file} for upload",
+                    :ex => ex, :backtrace => ex.backtrace)
+      unless file.nil?
+        @upload_queue.enq(file)
+      end
     end
   end
 
