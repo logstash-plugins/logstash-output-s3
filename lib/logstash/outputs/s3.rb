@@ -85,7 +85,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # AWS endpoint_region
   config :endpoint_region, :validate => ["us-east-1", "us-west-1", "us-west-2",
                                          "eu-west-1", "ap-southeast-1", "ap-southeast-2",
-                                        "ap-northeast-1", "sa-east-1", "us-gov-west-1"], :deprecated => 'Deprecated, use region instead.'
+                                        "ap-northeast-1", "sa-east-1", "us-gov-west-1", "cn-north-1"], :deprecated => 'Deprecated, use region instead.'
 
   # Set the size of file in bytes, this means that files on bucket when have dimension > file_size, they are stored in two or more file.
   # If you have tags then it will generate a specific size file for every tags
@@ -171,7 +171,9 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     end
 
     return {
-      :s3_endpoint => region_to_use == 'us-east-1' ? 's3.amazonaws.com' : "s3-#{region_to_use}.amazonaws.com"
+        :s3_endpoint => region_to_use == 'us-east-1' ? 's3.amazonaws.com' :
+                        !(region_to_use =~ /^cn-.*/).nil? ? "s3.#{region_to_use}.amazonaws.com.cn" :
+                        "s3-#{region_to_use}.amazonaws.com"
     }
   end
 
