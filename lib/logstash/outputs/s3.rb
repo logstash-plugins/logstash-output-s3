@@ -271,7 +271,6 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
     begin
       write_on_bucket(test_filename)
-      delete_on_bucket(test_filename)
     ensure
       File.delete(test_filename)
     end
