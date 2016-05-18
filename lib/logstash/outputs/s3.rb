@@ -118,6 +118,10 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # Specify a prefix to the uploaded filename, this can simulate directories on S3.  Prefix does not require leading slash.
   config :prefix, :validate => :string, :default => ''
 
+  # Specify a date-based prefix to the uploaded filename, this can simulate directories on S3.  Prefix does not require leading slash.
+  # The value will be parsed through strftime()
+  config :date_prefix, :validate => :string, :default => ''
+
   # Specify how many workers to use to upload the files to S3
   config :upload_workers_count, :validate => :number, :default => 1
 
@@ -180,7 +184,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     # find and use the bucket
     bucket = @s3.buckets[@bucket]
 
-    remote_filename = "#{@prefix}#{File.basename(file)}"
+    remote_filename = get_remote_filename(file)
 
     @logger.debug("S3: ready to write file in bucket", :remote_filename => remote_filename, :bucket => @bucket)
 
@@ -329,6 +333,16 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   end
 
   public
+  def get_remote_filename(file)
+    current_time = Time.now
+    if @date_prefix.to_s == ''
+      return "#{@prefix}#{File.basename(file)}"
+    else
+      return "#{@prefix}#{current_time.strftime(@date_prefix)}#{File.basename(file)}"
+    end
+  end
+
+  public
   def receive(event)
 
     @codec.encode(event)
@@ -472,7 +486,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   def delete_on_bucket(filename)
     bucket = @s3.buckets[@bucket]
 
-    remote_filename = "#{@prefix}#{File.basename(filename)}"
+    remote_filename = get_remote_filename(filename)
 
     @logger.debug("S3: delete file from bucket", :remote_filename => remote_filename, :bucket => @bucket)
 
