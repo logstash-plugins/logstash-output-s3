@@ -85,7 +85,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # AWS endpoint_region
   config :endpoint_region, :validate => ["us-east-1", "us-west-1", "us-west-2",
                                          "eu-west-1", "ap-southeast-1", "ap-southeast-2",
-                                        "ap-northeast-1", "sa-east-1", "us-gov-west-1"], :deprecated => 'Deprecated, use region instead.'
+                                        "ap-northeast-1", "ap-northeast-2", "sa-east-1", "us-gov-west-1"], :deprecated => 'Deprecated, use region instead.'
 
   # Set the size of file in bytes, this means that files on bucket when have dimension > file_size, they are stored in two or more file.
   # If you have tags then it will generate a specific size file for every tags
