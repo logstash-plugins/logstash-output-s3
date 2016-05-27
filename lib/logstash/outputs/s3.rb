@@ -62,7 +62,7 @@ require "fileutils"
 #    s3{
 #      access_key_id => "crazy_key"             (required)
 #      secret_access_key => "monkey_access_key" (required)
-#      endpoint_region => "eu-west-1"           (required) - Deprecated
+#      region => "eu-west-1"                    (optional, default = "us-east-1")
 #      bucket => "boss_please_open_your_bucket" (required)
 #      size_file => 2048                        (optional) - Bytes
 #      time_file => 5                           (optional) - Minutes
@@ -81,11 +81,6 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   # S3 bucket
   config :bucket, :validate => :string
-
-  # AWS endpoint_region
-  config :endpoint_region, :validate => ["us-east-1", "us-west-1", "us-west-2",
-                                         "eu-west-1", "ap-southeast-1", "ap-southeast-2",
-                                        "ap-northeast-1", "sa-east-1", "us-gov-west-1"], :deprecated => 'Deprecated, use region instead.'
 
   # Set the size of file in bytes, this means that files on bucket when have dimension > file_size, they are stored in two or more file.
   # If you have tags then it will generate a specific size file for every tags
@@ -161,17 +156,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   end
 
   def aws_service_endpoint(region)
-    # Make the deprecated endpoint_region work
-    # TODO: (ph) Remove this after deprecation.
-
-    if @endpoint_region
-      region_to_use = @endpoint_region
-    else
-      region_to_use = @region
-    end
-
     return {
-      :s3_endpoint => region_to_use == 'us-east-1' ? 's3.amazonaws.com' : "s3-#{region_to_use}.amazonaws.com"
+      :s3_endpoint => region == 'us-east-1' ? 's3.amazonaws.com' : "s3-#{region}.amazonaws.com"
     }
   end
 

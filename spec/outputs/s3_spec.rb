@@ -20,17 +20,7 @@ describe LogStash::Outputs::S3 do
                                "bucket" => "my-bucket" } }
 
   describe "configuration" do
-    let!(:config) { { "endpoint_region" => "sa-east-1" } }
-
-    it "should support the deprecated endpoint_region as a configuration option" do
-      s3 = LogStash::Outputs::S3.new(config)
-      expect(s3.aws_options_hash[:s3_endpoint]).to eq("s3-sa-east-1.amazonaws.com")
-    end
-
-    it "should fallback to region if endpoint_region isnt defined" do
-      s3 = LogStash::Outputs::S3.new(config.merge({ "region" => 'sa-east-1' }))
-      expect(s3.aws_options_hash).to include(:s3_endpoint => "s3-sa-east-1.amazonaws.com")
-    end
+    let!(:config) { { "region" => "sa-east-1" } }
 
     describe "signature version" do
       it "should set the signature version if specified" do
