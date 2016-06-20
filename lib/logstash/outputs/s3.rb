@@ -13,8 +13,8 @@ require "fileutils"
 # INFORMATION:
 #
 # This plugin batches and uploads logstash events into Amazon Simple Storage Service (Amazon S3).
-# 
-# Requirements: 
+#
+# Requirements:
 # * Amazon S3 Bucket and S3 Access Permissions (Typically access_key_id and secret_access_key)
 # * S3 PutObject permission
 # * Run logstash as superuser to establish connection
@@ -42,7 +42,7 @@ require "fileutils"
 # Both time_file and size_file settings can trigger a log "file rotation"
 # A log rotation pushes the current log "part" to s3 and deleted from local temporary storage.
 #
-## If you specify BOTH size_file and time_file then it will create file for each tag (if specified). 
+## If you specify BOTH size_file and time_file then it will create file for each tag (if specified).
 ## When EITHER time_file minutes have elapsed OR log file size > size_file, a log rotation is triggered.
 ##
 ## If you ONLY specify time_file but NOT file_size, one file for each tag (if specified) will be created..
@@ -258,7 +258,6 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
     begin
       write_on_bucket(test_filename)
-      delete_on_bucket(test_filename)
     ensure
       File.delete(test_filename)
     end
@@ -452,24 +451,6 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   private
   def reset_page_counter
     @page_counter = 0
-  end
-
-  private
-  def delete_on_bucket(filename)
-    bucket = @s3.buckets[@bucket]
-
-    remote_filename = "#{@prefix}#{File.basename(filename)}"
-
-    @logger.debug("S3: delete file from bucket", :remote_filename => remote_filename, :bucket => @bucket)
-
-    begin
-      # prepare for write the file
-      object = bucket.objects[remote_filename]
-      object.delete
-    rescue AWS::Errors::Base => e
-      @logger.error("S3: AWS error", :error => e)
-      raise LogStash::ConfigurationError, "AWS Configuration Error"
-    end
   end
 
   private
