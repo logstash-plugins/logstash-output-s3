@@ -1,3 +1,6 @@
+## 3.1.1
+ - Adds ability to set a file header
+
 ## 3.1.0
  - breaking,config: Remove deprecated config `endpoint_region`. Please use `region` instead.
 
