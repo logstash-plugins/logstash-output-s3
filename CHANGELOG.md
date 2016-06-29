@@ -1,3 +1,6 @@
+## 3.1.1
+ - Remove the mention of superusers in the doc
+
 ## 3.1.0
  - breaking,config: Remove deprecated config `endpoint_region`. Please use `region` instead.
 

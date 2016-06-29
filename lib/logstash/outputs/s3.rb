@@ -17,7 +17,6 @@ require "fileutils"
 # Requirements: 
 # * Amazon S3 Bucket and S3 Access Permissions (Typically access_key_id and secret_access_key)
 # * S3 PutObject permission
-# * Run logstash as superuser to establish connection
 #
 # S3 outputs create temporary files into "/opt/logstash/S3_temp/". If you want, you can change the path at the start of register method.
 #
