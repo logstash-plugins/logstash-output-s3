@@ -135,7 +135,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   # Exposed attributes for testing purpose.
   attr_accessor :tempfile
-  attr_reader :page_counter
+  attr_reader :page_counter, :upload_workers
   attr_reader :s3
 
   def aws_s3_config
@@ -421,15 +421,11 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       Stud::Task.new do
         LogStash::Util::set_thread_name("<S3 upload worker #{worker_id}")
 
-        while true do
+        continue = true
+        while continue do
           @logger.debug("S3: upload worker is waiting for a new file to upload.", :worker_id => worker_id)
 
-          begin
-            upload_worker
-          rescue Exception => ex
-            @logger.error('upload_worker unhandled exception', :ex => ex, :backtrace => ex.backtrace)
-            raise LogStash::Error, 'S3: uploader thread exited unexpectedly'
-          end
+          continue = upload_worker
         end
       end
     end
@@ -441,19 +437,22 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     begin
       file = @upload_queue.deq
 
-      if file.is_a? LogStash::ShutdownEvent
+      if file == LogStash::SHUTDOWN
         @logger.debug("S3: upload worker is shutting down gracefuly")
         @upload_queue.enq(LogStash::SHUTDOWN)
+        false
       else
         @logger.debug("S3: upload working is uploading a new file", :filename => File.basename(file))
         move_file_to_bucket(file)
+        true
       end
     rescue Exception => ex
       @logger.error("failed to upload, will re-enqueue #{file} for upload",
                     :ex => ex, :backtrace => ex.backtrace)
-      unless file.nil?
+      unless file.nil? # Rare case if the first line of the begin doesn't execute
         @upload_queue.enq(file)
       end
+      true
     end
   end
 

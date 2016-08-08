@@ -1,9 +1,6 @@
-## 3.1.1
-  - Relax constraint on logstash-core-plugin-api to >= 1.60 <= 2.99
-
-## 3.1.0
- - breaking,config: Remove deprecated config `endpoint_region`. Please use `region` instead.
-
+## 3.1.2
+  - Fix improper shutdown of output worker threads
+  - improve exception handling
 ## 3.0.1
  - Republish all the gems under jruby.
 
