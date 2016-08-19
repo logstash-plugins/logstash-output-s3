@@ -103,7 +103,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   config :canned_acl, :validate => ["private", "public_read", "public_read_write", "authenticated_read"],
          :default => "private"
 
-  # Specifies whether or not to use S3's AES256 server side encryption. Defaults to false.
+  # The algorithm to use for server-side encryption. Defaults to nil.
   config :server_side_encryption, :validate => ['AES256', 'aws:kms'], :default => nil
 
   # Set the directory where logstash will store the tmp files before sending it to S3
