@@ -302,6 +302,33 @@ describe LogStash::Outputs::S3 do
       end
     end
 
+    describe "closing" do
+      let(:options) do
+        {
+          "access_key_id" => 1234,
+          "secret_access_key" => "secret",
+          "bucket" => "mahbucket"
+        }
+      end
+      subject do
+        ::LogStash::Outputs::S3.new(options)
+      end
+
+      before do
+        subject.register
+      end
+
+      it "should be clean" do
+        subject.do_close
+      end
+
+      it "should remove all worker threads" do
+        subject.do_close
+        sleep 1
+        expect(subject.upload_workers.map(&:thread).any?(&:alive?)).to be false
+      end
+    end
+
     it "doesn't skip events if using the time_file option", :tag => :slow do
       Stud::Temporary.directory do |temporary_directory|
         time_file = rand(1..2)
