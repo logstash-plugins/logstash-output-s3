@@ -79,6 +79,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   config_name "s3"
   default :codec, 'line'
 
+  concurrency :shared
+
   # S3 bucket
   config :bucket, :validate => :string
 
@@ -213,8 +215,6 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     # required if using ruby version < 2.0
     # http://ruby.awsblog.com/post/Tx16QY1CI5GVBFT/Threading-with-the-AWS-SDK-for-Ruby
     AWS.eager_autoload!(AWS::S3)
-
-    workers_not_supported
 
     @s3 = aws_s3_config
     @upload_queue = Queue.new
