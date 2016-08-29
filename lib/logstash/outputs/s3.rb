@@ -79,7 +79,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   config_name "s3"
   default :codec, 'line'
 
-  concurrency :single
+  concurrency :shared
 
   # S3 bucket
   config :bucket, :validate => :string
@@ -177,6 +177,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
         # prepare for write the file
         object = bucket.objects[remote_filename]
         object.write(fileIO,
+                     :upload_id => remote_filename,
                      :acl => @canned_acl,
                      :server_side_encryption => @server_side_encryption ? :aes256 : nil,
                      :content_encoding => @encoding == "gzip" ? "gzip" : nil)
