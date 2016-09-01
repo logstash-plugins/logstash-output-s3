@@ -2,9 +2,9 @@
 module LogStash
   module Outputs
     class S3
-      class WriteableDirectoryValidator
+      class WritableDirectoryValidator
         def self.valid?(path)
-          File.writable?(path)
+          ::File.writable?(path)
         end
       end
     end

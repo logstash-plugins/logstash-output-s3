@@ -14,16 +14,36 @@ describe LogStash::Outputs::S3::TimeRotationPolicy do
 
   before :each do
     FileUtils.mkdir_p(temporary_directory)
-    file.write(content)
-    file.close
+  end
+  
+  context "when the size of the file is superior to 0" do
+    before :each do
+      file.write(content)
+      file.close
+    end
+
+    it "returns true if the file old enough" do
+      sleep(max_time * 2)
+      expect(subject.rotate?(file)).to be_truthy
+    end
+
+    it "returns false is not old enough" do
+      expect(subject.rotate?(file)).to be_falsey
+    end
   end
 
-  it "returns true if the file old enough" do
-    sleep(max_time * 2)
-    expect(subject.rotate?(file)).to be_truthy
-  end
+  context "When the size of the file is 0" do
+    before :each do
+      file.close
+    end
 
-  it "returns false is not old enough" do
-    expect(subject.rotate?(file)).to be_falsey
+    it "returns true if the file old enough" do
+      sleep(max_time * 2)
+      expect(subject.rotate?(file)).to be_falsey
+    end
+
+    it "returns false is not old enough" do
+      expect(subject.rotate?(file)).to be_falsey
+    end
   end
 end

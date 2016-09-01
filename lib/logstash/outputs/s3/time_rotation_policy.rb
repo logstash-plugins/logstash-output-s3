@@ -10,7 +10,7 @@ module LogStash
         end
 
         def rotate?(file)
-          Time.now - file.ctime >= max_age
+          file.size > 0 && Time.now - file.ctime >= max_age
         end
       end
     end

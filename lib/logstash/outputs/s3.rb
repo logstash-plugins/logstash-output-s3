@@ -4,10 +4,12 @@ require "logstash/namespace"
 require "logstash/plugin_mixins/aws_config"
 require "stud/temporary"
 require "stud/task"
-require "socket" # for Socket.gethostname
+require "concurrent"
+require "socket"
 require "thread"
 require "tmpdir"
 require "fileutils"
+require "set"
 
 
 # INFORMATION:
@@ -74,7 +76,6 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   require "logstash/outputs/s3/writable_directory_validator"
   require "logstash/outputs/s3/path_validator"
   require "logstash/outputs/s3/write_bucket_permission_validator"
-  require "logstash/outputs/s3/writable_directory_validator"
   require "logstash/outputs/s3/size_rotation_policy"
   require "logstash/outputs/s3/time_rotation_policy"
   require "logstash/outputs/s3/temporary_file"
@@ -142,6 +143,12 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # Specify the content encoding. Supports ("gzip"). Defaults to "none"
   config :encoding, :validate => ["none", "gzip"], :default => "none"
 
+  # TODO:
+  # [ ] - Make sure the clients is correctly setup
+  # [ ] - Validate the write permission on the bucket
+  # [ ] - base_path on the file
+  # [ ] - Add logging
+
   def register
     unless @prefix.nil?
       if !PathValidator.valid?(prefix) 
@@ -149,66 +156,134 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       end
     end
 
-    configure_temporary_directory
+    FileUtils.mkdir_p(@temporary_directory)
     if !WritableDirectoryValidator.valid?(@temporary_directory)
       raise LogStash::ConfigurationError, "Logstash must have the permissions to write to the temporary directory: #{@temporary_directory}"
     end
 
-    @rotation_lock = Mutex.new
+    # The path need to contains the prefix so when we start
+    # logtash after a crash we keep the remote structure
+    @prefixed_factories =  Concurrent::Map.new
 
-    @temp_file = create_new_temporary_file
     @rotation = rotation_strategy
-    @uploader = Uploader.new(@upload_workers_count)
+    @uploader = Uploader.new(bucket_resource, @upload_workers_count)
 
     # Async upload existing files after a crash
     restore_from_crash if @restore
+    start_stale_sweeper
   end
 
-  def multi_receive(events_and_encoded)
+  def multi_receive_encoded(events_and_encoded)
+    prefix_written_to = Set.new
+
     events_and_encoded.each do |event, encoded|
-      temp_file(event).write(encoded)
+      write_to_tempfile(event, encoded, prefix_written_to)
     end
 
-    rotate_file_if_needed
+    # Groups IO calls to optimize fstat checks
+    rotate_if_needed(prefix_written_to)
   end
 
   def close
-    @rotation_lock.synchronize { @uploader.do(@tempfile) } # schedule for upload the current file
-    @uploader.stop # wait until all the current uplaod are complete
+    stop_stale_sweeper
+
+    # The plugin has stopped receiving new events, but we still have
+    # data on disk, lets make sure it get to S3.
+    # If Logstash get interrupted, the `restore_from_crash` (when set to true) method will pickup
+    # the content in the temporary directly and upload it.
+    # This will block the shutdown until all upload are done or the use force quit.
+    @prefixed_factories.values do |prefixed_file|
+      prefixed_file.with_lock { |fileFactory| upload_file(fileFactory.current) }
+    end
+
+    @uploader.stop # wait until all the current upload are complete
   end
 
-  # This need to be called by the event receive and
-  # also by a tick
-  def rotate_file_if_needed
-    @rotation_lock.synchronize do
-      if @rotation.required?(@temp_file)
-        @uploader.do(@temp_file, :on_complete => method(&:clean_temporary_file) # TODO on delete?
-        @temp_file = create_new_temporary_file
+  private
+  def start_stale_sweeper
+    @stale_sweeper = Concurrent::TimerTask.new(:execution_interval => 1) do
+      LogStash::Util.set_name("S3, Stale file sweeper")
+      @prefixed_factories.delete_if u{ |k, v| }
+    end
+
+    @stale_sweeper.execute
+  end
+
+  def stop_stale_sweeper
+    @stale_sweeper.shutdown
+  end
+
+  def bucket_resource
+    Aws::S3::Bucket.new(@bucket, :region => @region, :credentials => credentials)
+  end
+
+  def credentials
+    Aws::Credentials.new(@access_key_id, @secret_access_key)
+  end
+
+  # Ensure that all access or work done
+  # on a factory is threadsafe
+  class PrefixedValue
+    STALE_TIME_SECS = 60*60 
+
+    attr_accessor :last_access
+
+    def initialize(factory)
+      @factory = factory
+      @lock = Mutex.new
+      @last_access = Time.now
+    end
+
+    def with_lock
+      @lock.synchronize {
+        @last_access = Time.now
+        yield @factory
+      }
+    end
+
+    def stale?
+      with_lock { |factory| factory.current.empty? && Time.now - last_access > STALE_TIME_SECS  }
+    end
+  end
+
+  def write_to_tempfile(event, encoded, prefix_written_to)
+    prefix_key = event.sprintf(@prefix)
+    prefix_written_to << prefix_key
+
+    @prefixed_factories.compute_if_absent(prefix_key) { PrefixedValue.new(TemporaryFileFactory.new(prefix_key, self)) }
+      .with_lock { |factory| factory.current.write(encoded) }
+  end
+
+  def rotate_if_needed(prefixes)
+    prefixes.each do |prefix|
+      @prefixed_factories[prefix].with_lock do |factory|
+        temp_file = factory.current
+        
+        if @rotation.rotate?(temp_file)
+          @logger.error("Rotate file", :strategy => @rotation.class.name,
+                        :key => temp_file.key,
+                        :path => temp_file.path)
+
+          upload_file(temp_file)
+          factory.rotate!
+        end
       end
     end
   end
 
-  private
-  def tempfile(event)
-    @tempfile
+  def upload_file(temp_file)
+    @uploader.upload_async(temp_file, :on_complete => method(:clean_temporary_file))
   end
- 
+
   def rotation_strategy
     SizeRotationPolicy.new(size_file)
   end
 
   def clean_temporary_file(file)
-    FileUtils.rm_rf(file.path)
-  end
-
-  def create_new_temporary_file
-    TemporaryFile.new
+    @logger.error("Removing temporary file", :file => file.path)
+    file.delete!
   end
 
   def restore_from_crash
-  end
-
-  def configure_temporary_directory
-    FileUtils.mkdir_p(@temporary_directory) unless Dir.exists?(@temporary_directory)
   end
 end

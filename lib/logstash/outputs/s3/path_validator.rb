@@ -1,6 +1,6 @@
 # encoding: utf-8
 module LogStash
-  module Ouputs
+  module Outputs
     class S3
       class PathValidator
         INVALID_CHARACTERS = /[\^`><]/
