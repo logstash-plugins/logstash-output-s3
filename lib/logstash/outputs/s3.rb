@@ -10,6 +10,7 @@ require "thread"
 require "tmpdir"
 require "fileutils"
 require "set"
+require "pathname"
 
 
 # INFORMATION:
@@ -81,6 +82,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   require "logstash/outputs/s3/temporary_file"
   require "logstash/outputs/s3/temporary_file_factory"
   require "logstash/outputs/s3/uploader"
+  require "logstash/outputs/s3/file_repository"
 
   include LogStash::PluginMixins::AwsConfig::V2
 
@@ -124,7 +126,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   config :prefix, :validate => :string, :default => ''
 
   # Specify how many workers to use to upload the files to S3
-  config :upload_workers_count, :validate => :number, :default => 1
+  config :upload_workers_count, :validate => :number, :default => (Concurrent.processor_count * 0.25).round
 
   # The version of the S3 signature hash to use. Normally uses the internal client default, can be explicitly
   # specified here
@@ -146,9 +148,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # TODO:
   # [ ] - Make sure the clients is correctly setup
   # [ ] - Validate the write permission on the bucket
-  # [ ] - base_path on the file
   # [ ] - Add logging
-
   def register
     unless @prefix.nil?
       if !PathValidator.valid?(prefix) 
@@ -161,23 +161,29 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       raise LogStash::ConfigurationError, "Logstash must have the permissions to write to the temporary directory: #{@temporary_directory}"
     end
 
-    # The path need to contains the prefix so when we start
-    # logtash after a crash we keep the remote structure
-    @prefixed_factories =  Concurrent::Map.new
+    @file_repository = FileRepository.new(@tags, @encoding, @temporary_directory)
 
     @rotation = rotation_strategy
-    @uploader = Uploader.new(bucket_resource, @upload_workers_count)
+    @uploader = Uploader.new(bucket_resource, @logger,  Concurrent::ThreadPoolExecutor.new({
+                                                                                             :min_threads => 1,
+                                                                                             :max_threads => upload_workers_count,
+                                                                                             :max_queue => 1,
+                                                                                             :fallback_policy => :caller_runs
+                                                                                           }))
 
-    # Async upload existing files after a crash
+    # Restoring from crash will use a new threadpool to slowly recover
+    # New events should have more priority.
     restore_from_crash if @restore
-    start_stale_sweeper
   end
 
   def multi_receive_encoded(events_and_encoded)
     prefix_written_to = Set.new
 
     events_and_encoded.each do |event, encoded|
-      write_to_tempfile(event, encoded, prefix_written_to)
+      prefix_key = event.sprintf(@prefix)
+      prefix_written_to << prefix_key
+
+      @file_repository.get_file(prefix_key) { |file| file.write(encoded) }
     end
 
     # Groups IO calls to optimize fstat checks
@@ -185,34 +191,22 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   end
 
   def close
-    stop_stale_sweeper
+    @file_repository.shutdown
 
     # The plugin has stopped receiving new events, but we still have
     # data on disk, lets make sure it get to S3.
     # If Logstash get interrupted, the `restore_from_crash` (when set to true) method will pickup
     # the content in the temporary directly and upload it.
     # This will block the shutdown until all upload are done or the use force quit.
-    @prefixed_factories.values do |prefixed_file|
-      prefixed_file.with_lock { |fileFactory| upload_file(fileFactory.current) }
+    @file_repository.each_files do |file|
+      upload_file(file)
     end
 
     @uploader.stop # wait until all the current upload are complete
+    @crash_uploader.stop if @restore # we might have still work to do for recovery so wait until we are done
   end
 
   private
-  def start_stale_sweeper
-    @stale_sweeper = Concurrent::TimerTask.new(:execution_interval => 1) do
-      LogStash::Util.set_name("S3, Stale file sweeper")
-      @prefixed_factories.delete_if u{ |k, v| }
-    end
-
-    @stale_sweeper.execute
-  end
-
-  def stop_stale_sweeper
-    @stale_sweeper.shutdown
-  end
-
   def bucket_resource
     Aws::S3::Bucket.new(@bucket, :region => @region, :credentials => credentials)
   end
@@ -221,46 +215,14 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     Aws::Credentials.new(@access_key_id, @secret_access_key)
   end
 
-  # Ensure that all access or work done
-  # on a factory is threadsafe
-  class PrefixedValue
-    STALE_TIME_SECS = 60*60 
-
-    attr_accessor :last_access
-
-    def initialize(factory)
-      @factory = factory
-      @lock = Mutex.new
-      @last_access = Time.now
-    end
-
-    def with_lock
-      @lock.synchronize {
-        @last_access = Time.now
-        yield @factory
-      }
-    end
-
-    def stale?
-      with_lock { |factory| factory.current.empty? && Time.now - last_access > STALE_TIME_SECS  }
-    end
-  end
-
-  def write_to_tempfile(event, encoded, prefix_written_to)
-    prefix_key = event.sprintf(@prefix)
-    prefix_written_to << prefix_key
-
-    @prefixed_factories.compute_if_absent(prefix_key) { PrefixedValue.new(TemporaryFileFactory.new(prefix_key, self)) }
-      .with_lock { |factory| factory.current.write(encoded) }
-  end
-
   def rotate_if_needed(prefixes)
     prefixes.each do |prefix|
-      @prefixed_factories[prefix].with_lock do |factory|
+      @file_repository.get_factory(prefix) do |factory|
         temp_file = factory.current
         
         if @rotation.rotate?(temp_file)
-          @logger.error("Rotate file", :strategy => @rotation.class.name,
+          @logger.error("Rotate file",
+                        :strategy => @rotation.class.name,
                         :key => temp_file.key,
                         :path => temp_file.path)
 
@@ -272,7 +234,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   end
 
   def upload_file(temp_file)
-    @uploader.upload_async(temp_file, :on_complete => method(:clean_temporary_file))
+    @logger.debug("Queue for upload", :path => temp_file.path)
+    @uploader.upload(temp_file, :on_complete => method(:clean_temporary_file))
   end
 
   def rotation_strategy
@@ -285,5 +248,21 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   end
 
   def restore_from_crash
+    @crash_uploader = Uploader.new(bucket_resource, @logger, Concurrent::ThreadPoolExecutor.new({
+                                                                                                  :min_threads => 1,
+                                                                                                  :max_threads => 1,
+                                                                                                  :fallback_policy => :caller_runs
+                                                                                                }))
+
+    temp_folder_path = Pathname.new(@temporary_directory)
+    Dir.glob(::File.join(@temporary_directory, "**/*")) do |file|
+      if ::File.file?(file)
+        key_parts = Pathname.new(file).relative_path_from(temp_folder_path).to_s.split(::File::SEPARATOR)
+        temp_file = TemporaryFile.new(key_parts.slice(1, key_parts.size).join("/"), ::File.open(file, "r"))
+
+        @logger.debug("Recover from crash and uploading", :file => temp_file.path)
+        @crash_uploader.upload_async(temp_file, :on_complete => method(:clean_temporary_file))
+      end
+    end
   end
 end

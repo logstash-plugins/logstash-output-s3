@@ -7,17 +7,20 @@ module LogStash
     class S3
       class Uploader
         DEFAULT_QUEUE_SIZE = 10
-        attr_reader :bucket, :upload_options
+        DEFAULT_THREADPOOL = Concurrent::ThreadPoolExecutor.new({
+                                                                  :min_threads => 1,
+                                                                  :max_threads => 8,
+                                                                  :max_queue => 1,
+                                                                  :fallback_policy => :caller_runs
+                                                                })
 
-        def initialize(bucket, upload_workers, upload_options = {}, queue = DEFAULT_QUEUE_SIZE)
+
+        attr_reader :bucket, :upload_options, :logger
+
+        def initialize(bucket, logger, threadpool = DEFAULT_THREADPOOL)
           @bucket = bucket
-          @upload_options = upload_options
-          @workers_pool = Concurrent::ThreadPoolExecutor.new({
-                                                               :min_threads => 1,
-                                                               :max_threads => upload_workers,
-                                                               :max_queue => queue,
-                                                               :fallback_policy => :caller_runs
-                                                             })
+          @workers_pool = threadpool
+          @logger = logger
         end
 
         def upload_async(file, options = {})
@@ -28,10 +31,15 @@ module LogStash
         end
 
         def upload(file, options = {})
-          obj = bucket.object(file.key)
-          obj.upload_file(file.path, upload_options)
+          begin
+            obj = bucket.object(file.key)
+            s3_options = options.fetch(:s3_options, {})
+            obj.upload_file(file.path, s3_options)
 
-          options[:on_complete].call(file) unless options[:on_complete].nil?
+            options[:on_complete].call(file) unless options[:on_complete].nil?
+          rescue => e
+            logger.error("Uploading failed", :exception => e)
+          end
         end
 
         def stop

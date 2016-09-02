@@ -24,13 +24,13 @@ module LogStash
 
         attr_accessor :counter, :tags, :prefix, :encoding, :temporary_directory, :current
 
-        def initialize(prefix, input)
+        def initialize(prefix, tags, encoding, temporary_directory)
           @counter = 0
           @prefix = prefix
 
-          @tags = input.tags
-          @encoding = input.encoding
-          @temporary_directory = input.temporary_directory
+          @tags = tags
+          @encoding = encoding
+          @temporary_directory = temporary_directory
 
           rotate!
         end
