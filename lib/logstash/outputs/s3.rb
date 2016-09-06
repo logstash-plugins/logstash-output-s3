@@ -276,10 +276,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   public
   def move_file_to_bucket(file)
-    if !File.zero?(file)
-      write_on_bucket(file)
-      @logger.debug("S3: File was put on the upload thread", :filename => File.basename(file), :bucket => @bucket)
-    end
+    write_on_bucket(file)
+    @logger.debug("S3: File was put on the upload thread", :filename => File.basename(file), :bucket => @bucket)
 
     begin
       File.delete(file)
@@ -400,6 +398,11 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
       Stud.interval(periodic_interval, :sleep_then_run => true) do
         @logger.debug("S3: time_file triggered, bucketing the file", :filename => @tempfile.path)
+
+        if tempfile_size == 0
+          @logger.debug("S3: skipping periodic rotation because file is empty")
+          next
+        end
 
         tempfile_path = @tempfile.path
         # close and start next file before sending the previous one
