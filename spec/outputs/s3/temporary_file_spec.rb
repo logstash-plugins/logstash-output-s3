@@ -3,19 +3,23 @@ require "logstash/devutils/rspec/spec_helper"
 require "logstash/outputs/s3/temporary_file"
 require "stud/temporary"
 require "fileutils"
+require "securerandom"
 
 describe LogStash::Outputs::S3::TemporaryFile do
   let(:content) { "hello world" }
-  let(:name) { "foo" }
+  let(:key) { "foo" }
+  let(:uuid) { SecureRandom.uuid }
+  let(:temporary_file) { ::File.open(::File.join(temporary_directory, uuid, key), "w+") }
   let(:temporary_directory) {  Stud::Temporary.directory }
+
   before :each do
-    FileUtils.mkdir_p(temporary_directory)
+    FileUtils.mkdir_p(::File.join(temporary_directory, uuid))
   end
 
-  subject { described_class.new(temporary_directory, name) }
+  subject { described_class.new(key, temporary_file) }
 
-  it "returns the name of the file" do
-    expect(subject.name).to eq(name)
+  it "returns the key of the file" do
+    expect(subject.key).to eq(key)
   end
 
   it "saves content to a file" do
@@ -30,14 +34,9 @@ describe LogStash::Outputs::S3::TemporaryFile do
     expect(File.exist?(subject.path)).to be_falsey
   end
 
-  it "returns the size of the file" do
-    subject.write(content)
-    subject.close
-    expect(subject.size).to be > 0
-  end
-
-  it "return the `ctime` of the file" do
-    t = Time.now
-    expect(subject.ctime).to be < t
+  described_class::DELEGATES_METHODS.each do |method_name|
+    it "delegates method `#{method_name}` to file descriptor" do
+      expect(subject.respond_to?(method_name)).to be_truthy
+    end
   end
 end

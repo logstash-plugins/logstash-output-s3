@@ -3,10 +3,10 @@ module LogStash
   module Outputs
     class S3
       class PathValidator
-        INVALID_CHARACTERS = /[\^`><]/
+        INVALID_CHARACTERS = "\^`><"
 
         def self.valid?(name)
-          name !~ INVALID_CHARACTERS
+          name.match(/[#{Regexp.escape(INVALID_CHARACTERS)}]/).nil?
         end
       end
     end

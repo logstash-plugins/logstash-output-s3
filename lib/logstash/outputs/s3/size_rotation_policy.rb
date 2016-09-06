@@ -3,14 +3,22 @@ module LogStash
   module Outputs
     class S3
       class SizeRotationPolicy
-        attr_reader :max_size
+        attr_reader :size_file
 
-        def initialize(max_size)
-          @max_size = max_size
+        def initialize(size_file)
+          if size_file <= 0
+            raise LogStash::ConfigurationError, "`size_file` need to be greather than 0"
+          end
+
+          @size_file = size_file
         end
 
         def rotate?(file)
-          file.size > max_size
+          file.size >= size_file
+        end
+
+        def need_periodic?
+          false
         end
       end
     end

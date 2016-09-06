@@ -6,7 +6,7 @@ module LogStash
   module Outputs
     class S3
       class Uploader
-        DEFAULT_QUEUE_SIZE = 10
+        TIME_BEFORE_RETRYING_SECONDS = 1
         DEFAULT_THREADPOOL = Concurrent::ThreadPoolExecutor.new({
                                                                   :min_threads => 1,
                                                                   :max_threads => 8,
@@ -26,20 +26,28 @@ module LogStash
         def upload_async(file, options = {})
           @workers_pool.post do
             LogStash::Util.set_thread_name("S3 output uploader, file: #{file.path}")
-            upload(file, options = {})
+            upload(file, options)
           end
         end
 
         def upload(file, options = {})
+          upload_options = options.fetch(:upload_options, {})
+
           begin
             obj = bucket.object(file.key)
-            s3_options = options.fetch(:s3_options, {})
-            obj.upload_file(file.path, s3_options)
-
-            options[:on_complete].call(file) unless options[:on_complete].nil?
+            obj.upload_file(file.path, upload_options)
           rescue => e
-            logger.error("Uploading failed", :exception => e)
+            # When we get here it usually mean that S3 tried to do some retry by himself (default is 3)
+            # When the retry limit is reached or another error happen we will wait and retry.
+            #
+            # Thread might be stuck here, but I think its better than losing anything
+            # its either a transient errors or something bad really happened.
+            sleep(TIME_BEFORE_RETRYING_SECONDS)
+            logger.error("Uploading failed, retrying", :exception => e, :path => file.path)
+            retry
           end
+
+          options[:on_complete].call(file) unless options[:on_complete].nil?
         end
 
         def stop

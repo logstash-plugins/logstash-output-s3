@@ -3,14 +3,22 @@ module LogStash
   module Outputs
     class S3
       class TimeRotationPolicy
-        attr_reader :max_age
+        attr_reader :time_file
 
-        def initialize(max_age)
-          @max_age = max_age
+        def initialize(time_file)
+          if time_file <= 0
+            raise LogStash::ConfigurationError, "`time_file` need to be greather than 0"
+          end
+
+          @time_file = time_file
         end
 
         def rotate?(file)
-          file.size > 0 && Time.now - file.ctime >= max_age
+          file.size > 0 && Time.now - file.ctime >= time_file
+        end
+
+        def need_periodic?
+          true
         end
       end
     end

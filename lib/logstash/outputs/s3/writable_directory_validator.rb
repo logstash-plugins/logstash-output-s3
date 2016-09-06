@@ -4,7 +4,12 @@ module LogStash
     class S3
       class WritableDirectoryValidator
         def self.valid?(path)
-          ::File.writable?(path)
+          begin
+            FileUtils.mkdir_p(path) unless Dir.exist?(path)
+            ::File.writable?(path)
+          rescue
+            false
+          end
         end
       end
     end

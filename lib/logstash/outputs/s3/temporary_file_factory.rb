@@ -20,7 +20,7 @@ module LogStash
         GZIP_ENCODING = "gzip"
         GZIP_EXTENSION = "txt.gz"
         TXT_EXTENSION = "txt"
-        STR_FTIME = "%Y-%m-%dT%H.%M"
+        STRFTIME = "%Y-%m-%dT%H.%M"
 
         attr_accessor :counter, :tags, :prefix, :encoding, :temporary_directory, :current
 
@@ -35,6 +35,13 @@ module LogStash
           rotate!
         end
 
+        def rotate!
+          @current = new_file
+          increment_counter
+          @current
+        end
+
+        private
         def extension
           gzip? ? GZIP_EXTENSION : TXT_EXTENSION
         end
@@ -48,7 +55,7 @@ module LogStash
         end
 
         def current_time
-          Time.now.strftime(STR_FTIME)
+          Time.now.strftime(STRFTIME)
         end
 
         def generate_name
@@ -76,12 +83,6 @@ module LogStash
                end
 
           TemporaryFile.new(key, io)
-        end
-
-        def rotate!
-          @current = new_file
-          increment_counter
-          @current
         end
       end
     end
