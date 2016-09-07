@@ -1,3 +1,6 @@
+## 4.0.14
+  - Support for non-AWS endpoints
+
 ## 4.0.13
   - Update gemspec summary
 
