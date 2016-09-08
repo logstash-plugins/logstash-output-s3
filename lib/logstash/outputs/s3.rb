@@ -79,7 +79,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   config_name "s3"
   default :codec, 'line'
 
-  concurrency :shared
+  concurrency :single
 
   # S3 bucket
   config :bucket, :validate => :string
