@@ -1,6 +1,13 @@
+## 3.2.0
+  - Move to the new concurrency model `:single`
+  - use correct license identifier #99
+  - add support for `bucket_owner_full_control` in the canned ACL #87
+  - dont delete plugin test files, since we only actually need the put object permission #85
+
 ## 3.1.2
   - Fix improper shutdown of output worker threads
   - improve exception handling
+
 ## 3.0.1
  - Republish all the gems under jruby.
 
