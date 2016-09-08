@@ -2,7 +2,7 @@
   - Move to the new concurrency model `:single`
   - use correct license identifier #99
   - add support for `bucket_owner_full_control` in the canned ACL #87
-  - dont delete plugin test files, since we only actually need the put object permission #85
+  - delete the test file but ignore any errors, because we actually only need to be able to write to S3. #97
 
 ## 3.1.2
   - Fix improper shutdown of output worker threads
