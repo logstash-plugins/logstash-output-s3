@@ -258,6 +258,15 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
     begin
       write_on_bucket(test_filename)
+
+      begin
+        remote_filename = "#{@prefix}#{File.basename(test_filename)}"
+        bucket = @s3.buckets[@bucket]
+        bucket.objects[remote_filename].delete
+      rescue StandardError => e
+        # we actually only need `put_object`, but if we dont delete them
+        # we can have a lot of tests files
+      end
     ensure
       File.delete(test_filename)
     end
