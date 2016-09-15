@@ -68,6 +68,7 @@ require "fileutils"
 #      time_file => 5                           (optional) - Minutes
 #      format => "plain"                        (optional)
 #      canned_acl => "private"                  (optional. Options are "private", "public_read", "public_read_write", "authenticated_read", "bucket_owner_full_control". Defaults to "private" )
+#      encoding => "gzip"                       (optional. Options are "none" or "gzip")
 #    }
 #
 class LogStash::Outputs::S3 < LogStash::Outputs::Base
