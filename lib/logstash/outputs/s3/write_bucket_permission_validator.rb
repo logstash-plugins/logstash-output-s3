@@ -1,6 +1,7 @@
 # encoding: utf-8
 require "stud/temporary"
 require "socket"
+require "fileutils"
 
 module LogStash
   module Outputs
@@ -22,12 +23,14 @@ module LogStash
           key = "logstash-programmatic-access-test-object-#{generated_at}"
           content = "Logstash permission check on #{generated_at}, by #{Socket.gethostname}"
 
-          Stud::Temporary.file do |f|
+          begin
+            f = Stud::Temporary.file
             f.write(content)
             f.fsync
+            f.close
 
             obj = bucket_resource.object(key)
-            obj.upload_file(key)
+            obj.upload_file(f)
 
             begin
               obj.delete
@@ -36,6 +39,8 @@ module LogStash
               # but don't raise any errors if that doesn't work.
               # since we only really need `putobject`.
             end
+          ensure
+            FileUtils.rm_rf(f.path)
           end
         end
       end
