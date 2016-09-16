@@ -4,7 +4,7 @@ require "logstash/outputs/s3"
 require "logstash/codecs/line"
 require "stud/temporary"
 
-describe "Upload current file on shutdown", :integration => true do
+describe "Upload current file on shutdown", :slow => true do
   include_context "setup plugin"
   let(:stress_time) { ENV["RUNTIME"] || 10 * 60}
   let(:options) { main_options }
