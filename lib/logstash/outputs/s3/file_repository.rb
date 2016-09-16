@@ -47,6 +47,10 @@ module LogStash
           start_stale_sweeper
         end
 
+        def keys
+          @prefixed_factories.keys
+        end
+
         def each_files
           @prefixed_factories.each_value do |prefixed_file|
             prefixed_file.with_lock { |factory| yield factory.current }

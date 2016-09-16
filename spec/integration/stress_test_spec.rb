@@ -6,7 +6,7 @@ require "stud/temporary"
 
 describe "Upload current file on shutdown", :slow => true do
   include_context "setup plugin"
-  let(:stress_time) { ENV["RUNTIME"] || 10 * 60}
+  let(:stress_time) { ENV["RUNTIME"] || 1 * 60 }
   let(:options) { main_options }
 
   let(:time_file) { 15 }
@@ -20,18 +20,27 @@ describe "Upload current file on shutdown", :slow => true do
     end
     b
   end
+  let(:workers) { 3 }
 
   it "Persists all events" do
     started_at = Time.now
-    events_sent = 0
+    events_sent = {}
 
     clean_remote_files(prefix)
     subject.register
 
-    while Time.now - started_at < stress_time
-      subject.multi_receive_encoded(batch)
-      events_sent += batch_size
+    workers.times do
+      Thread.new do
+        events_sent[Thread.current] = 0
+
+        while Time.now - started_at < stress_time
+          subject.multi_receive_encoded(batch)
+          events_sent[Thread.current] += batch_size
+        end
+      end
     end
+
+    sleep(1) while Time.now - started_at < stress_time
 
     subject.close
 
@@ -46,6 +55,6 @@ describe "Upload current file on shutdown", :slow => true do
       object.get(:response_target => target)
       counter += 1
     end
-    expect(Dir.glob(File.join(download_directory, "**", "*.txt")).inject(0) { |sum, f| sum + IO.readlines(f).size }).to eq(events_sent)
+    expect(Dir.glob(File.join(download_directory, "**", "*.txt")).inject(0) { |sum, f| sum + IO.readlines(f).size }).to eq(events_sent.values.inject(0, :+))
   end
 end

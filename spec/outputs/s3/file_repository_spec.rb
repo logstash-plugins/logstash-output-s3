@@ -64,10 +64,14 @@ describe LogStash::Outputs::S3::FileRepository do
     end
   end
 
-  it "returns the number of prefix key" do
+  it "returns the number of prefix keys" do
     expect(subject.size).to eq(0)
     subject.get_file(prefix_key)  { |file| file.write("something") }
     expect(subject.size).to eq(1)
+  end
+
+  it "returns all available keys" do
+    expect(subject.keys).to eq([prefix_key])
   end
 
   it "clean stale factories" do

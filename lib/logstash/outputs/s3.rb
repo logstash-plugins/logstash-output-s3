@@ -265,9 +265,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
     @periodic_check = Concurrent::TimerTask.new(:execution_interval => PERIODIC_CHECK_INTERVAL_IN_SECONDS) do
       @logger.debug("Periodic check for stale files")
-      @file_repository.each_key do |k|
-        rotate_if_needed(Array(k))
-      end
+
+      rotate_if_needed(@file_repository.keys)
     end
 
     @periodic_check.execute

@@ -4,10 +4,10 @@ require "logstash/outputs/s3"
 require "logstash/codecs/line"
 require "stud/temporary"
 
-describe "File Time rotation with constant write", :integration => true do
+describe "File Time rotation with stale write", :integration => true do
   include_context "setup plugin"
 
-  let(:time_file) { 0.5 }
+  let(:time_file) { 1 }
   let(:options) { main_options.merge({ "rotation_strategy" => "time" }) }
   let(:number_of_events) { 5000 }
   let(:batch_size) { 125 }
@@ -26,7 +26,7 @@ describe "File Time rotation with constant write", :integration => true do
     clean_remote_files(prefix)
     subject.register
     subject.multi_receive_encoded(batch)
-    sleep(time_file * 3) # the periodic check should have kick int
+    sleep(time_file * 5) # the periodic check should have kick int
   end
 
   after do
