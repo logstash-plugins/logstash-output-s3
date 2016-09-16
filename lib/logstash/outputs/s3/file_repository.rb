@@ -47,8 +47,6 @@ module LogStash
           start_stale_sweeper
         end
 
-        # This method is not atomic, but in the code we are using
-        # to check if file need rotation.
         def keys
           @prefixed_factories.keys
         end
