@@ -10,13 +10,18 @@ module LogStash
       # It make it more OOP and easier to reason with the paths.
       class TemporaryFile
         extend Forwardable
-        DELEGATES_METHODS = [:path, :write, :close, :size, :ctime, :fsync]
+        DELEGATES_METHODS = [:path, :write, :close, :size, :fsync]
 
         def_delegators :@fd, *DELEGATES_METHODS
 
         def initialize(key, fd)
           @fd = fd
           @key = key
+          @created_at = Time.now
+        end
+
+        def ctime
+          @created_at
         end
 
         def key

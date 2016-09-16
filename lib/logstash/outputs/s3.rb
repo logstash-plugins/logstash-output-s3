@@ -16,8 +16,8 @@ require "pathname"
 # INFORMATION:
 #
 # This plugin batches and uploads logstash events into Amazon Simple Storage Service (Amazon S3).
-# 
-# Requirements: 
+#
+# Requirements:
 # * Amazon S3 Bucket and S3 Access Permissions (Typically access_key_id and secret_access_key)
 # * S3 PutObject permission
 #
@@ -27,7 +27,7 @@ require "pathname"
 #
 # ls.s3.ip-10-228-27-95.2013-04-18T10.00.tag_hello.part0.txt
 #
-# 
+#
 # |=======
 # | ls.s3 | indicate logstash plugin s3 |
 # | ip-10-228-27-95 | indicates the ip of your machine. |
@@ -86,7 +86,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   include LogStash::PluginMixins::AwsConfig::V2
 
-  PERIODIC_CHECK_INTERVAL_IN_SECONDS = 10
+  PREFIX_KEY_NORMALIZE_CHARACTER = "_"
+  PERIODIC_CHECK_INTERVAL_IN_SECONDS = 15
   CRASH_RECOVERY_THREADPOOL = Concurrent::ThreadPoolExecutor.new({
                                                                    :min_threads => 1,
                                                                    :max_threads => 2,
@@ -210,7 +211,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     prefix_written_to = Set.new
 
     events_and_encoded.each do |event, encoded|
-      prefix_key = event.sprintf(@prefix)
+      prefix_key = normalize_key(event.sprintf(@prefix))
       prefix_written_to << prefix_key
 
       begin
@@ -219,7 +220,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
         # Log the error and rethrow it.
       rescue Errno::ENOSPC => e
         @logger.error("S3: No space left in temporary directory", :temporary_directory => @temporary_directory)
-        raise e 
+        raise e
       end
     end
 
@@ -238,7 +239,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     # the content in the temporary directly and upload it.
     # This will block the shutdown until all upload are done or the use force quit.
     @file_repository.each_files do |file|
-      upload_file(file) unless file.size? == 0
+      upload_file(file)
     end
 
     @file_repository.shutdown
@@ -253,6 +254,10 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     options.merge(aws_options_hash)
   end
 
+  def normalize_key(prefix_key)
+    prefix_key.gsub(PathValidator.matches_re, PREFIX_KEY_NORMALIZE_CHARACTER)
+  end
+
   private
   # We start a task in the background for check for stale files and make sure we rotate them to S3 if needed.
   def start_periodic_check
@@ -260,7 +265,9 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
     @periodic_check = Concurrent::TimerTask.new(:execution_interval => PERIODIC_CHECK_INTERVAL_IN_SECONDS) do
       @logger.debug("Periodic check for stale files")
-      rotate_if_needed(@file_repository.values)
+      @file_repository.each_key do |k|
+        rotate_if_needed(Array(k))
+      end
     end
 
     @periodic_check.execute
@@ -273,7 +280,6 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   def bucket_resource
     Aws::S3::Bucket.new(@bucket, { :credentials => credentials }.merge(aws_options_hash))
   end
-
 
   def aws_service_endpoint(region)
     { :s3_endpoint => region == 'us-east-1' ? 's3.amazonaws.com' : "s3-#{region}.amazonaws.com"}
@@ -312,9 +318,11 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
     # if the queue is full the calling thread will be used to upload
     temp_file.fsync # make sure we flush the fd before uploading it.
-    @uploader.upload_async(temp_file,
-                           :on_complete => method(:clean_temporary_file),
-                           :upload_options => upload_options )
+    if temp_file.size > 0
+      @uploader.upload_async(temp_file,
+                             :on_complete => method(:clean_temporary_file),
+                             :upload_options => upload_options )
+    end
   end
 
   def rotation_strategy

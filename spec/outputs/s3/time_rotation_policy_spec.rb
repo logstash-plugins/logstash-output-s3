@@ -52,4 +52,8 @@ describe LogStash::Outputs::S3::TimeRotationPolicy do
       expect(subject.need_periodic?).to be_truthy
     end
   end
+
+  it "returns the creation time" do
+    expect(subject.ctime).to be < Time.now
+  end
 end

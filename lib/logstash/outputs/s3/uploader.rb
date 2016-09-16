@@ -52,7 +52,7 @@ module LogStash
 
         def stop
           @workers_pool.shutdown
-          @workers_pool.wait_for_termination
+          @workers_pool.wait_for_termination(nil) # block until its done
         end
       end
     end

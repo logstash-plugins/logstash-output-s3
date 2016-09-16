@@ -48,7 +48,7 @@ module LogStash
         end
 
         def each_files
-          @prefixed_factories.values do |prefixed_file|
+          @prefixed_factories.each_value do |prefixed_file|
             prefixed_file.with_lock { |factory| yield factory.current }
           end
         end

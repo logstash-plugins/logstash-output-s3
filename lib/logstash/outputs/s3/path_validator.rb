@@ -6,7 +6,11 @@ module LogStash
         INVALID_CHARACTERS = "\^`><"
 
         def self.valid?(name)
-          name.match(/[#{Regexp.escape(INVALID_CHARACTERS)}]/).nil?
+          name.match(matches_re).nil?
+        end
+
+        def self.matches_re
+          /[#{Regexp.escape(INVALID_CHARACTERS)}]/
         end
       end
     end

@@ -57,16 +57,13 @@ describe LogStash::Outputs::S3 do
       s3 = described_class.new(options.merge({ "prefix" => "`no\><^" }))
       expect { s3.register }.to raise_error(LogStash::ConfigurationError)
     end
-      
+
     it "allow to not validate credentials" do
       s3 = described_class.new(options.merge({"validate_credentials_on_root_bucket" => false}))
       expect(LogStash::Outputs::S3::WriteBucketPermissionValidator).not_to receive(:valid?).with(any_args)
       s3.register
     end
-
-    it "validates the rotation arguments"
   end
-
 
   context "receiving events" do
     before do
@@ -77,13 +74,5 @@ describe LogStash::Outputs::S3 do
       expect(event).to receive(:sprintf).with(prefix).and_return("super/overwatch")
       subject.multi_receive_encoded(events_and_encoded)
     end
-
-    it "runs periodic checks"
   end
 end
-
-# integration
-# Time -> mechanic, assert
-# Size -> mechanic, assert
-# both -> mechanic, assert
-# crash -> fixtures, assert
