@@ -71,7 +71,10 @@ describe LogStash::Outputs::S3::FileRepository do
   end
 
   it "returns all available keys" do
-    expect(subject.keys).to eq([prefix_key])
+    # this method is not atomic.
+    try {
+      expect(subject.keys).to eq([prefix_key])
+    }
   end
 
   it "clean stale factories" do
