@@ -41,6 +41,6 @@ describe LogStash::Outputs::S3::TemporaryFile do
   end
 
   it "returns the creation time" do
-    expect(subject.ctime).to be < Time.now
+    expect(subject.ctime).to be < Time.now + 0.5
   end
 end
