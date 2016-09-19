@@ -312,7 +312,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   public
   def get_temporary_filename(page_counter = 0)
-    current_time = Time.now
+    current_time = Time.now.utc
     filename = "ls.s3.#{Socket.gethostname}.#{current_time.strftime("%Y-%m-%dT%H.%M")}"
 
     if @tags.size > 0
