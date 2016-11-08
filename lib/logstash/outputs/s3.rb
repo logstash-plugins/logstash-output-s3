@@ -44,7 +44,7 @@ require "pathname"
 ## Both time_file and size_file settings can trigger a log "file rotation"
 ## A log rotation pushes the current log "part" to s3 and deleted from local temporary storage.
 #
-## If you specify BOTH size_file and time_file then it will create file for each tag (if specified). 
+## If you specify BOTH size_file and time_file then it will create file for each tag (if specified).
 ## When EITHER time_file minutes have elapsed OR log file size > size_file, a log rotation is triggered.
 ##
 ## If you ONLY specify time_file but NOT file_size, one file for each tag (if specified) will be created.
@@ -136,7 +136,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   config :prefix, :validate => :string, :default => ''
 
   # Specify how many workers to use to upload the files to S3
-  config :upload_workers_count, :validate => :number, :default => (Concurrent.processor_count * 0.25).round
+  config :upload_workers_count, :validate => :number, :default => (Concurrent.processor_count * 0.5).round
 
   # Number of items we can keep in the local queue before uploading them
   config :upload_queue_size, :validate => :number, :default => 2 * (Concurrent.processor_count * 0.25).round
@@ -171,7 +171,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     # to prepare for the new config validation that will be part of the core so the core can
     # be moved easily.
     unless @prefix.empty?
-      if !PathValidator.valid?(prefix) 
+      if !PathValidator.valid?(prefix)
         raise LogStash::ConfigurationError, "Prefix must not contains: #{PathValidator::INVALID_CHARACTERS}"
       end
     end
@@ -180,7 +180,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       raise LogStash::ConfigurationError, "Logstash must have the permissions to write to the temporary directory: #{@temporary_directory}"
     end
 
-    if @validate_credentials_on_root_bucket && !WriteBucketPermissionValidator.valid?(bucket_resource) 
+    if @validate_credentials_on_root_bucket && !WriteBucketPermissionValidator.valid?(bucket_resource)
       raise LogStash::ConfigurationError, "Logstash must have the privileges to write to root bucket `#{@bucket}`, check you credentials or your permissions."
     end
 
