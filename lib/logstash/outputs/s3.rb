@@ -162,7 +162,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # The default strategy is to check for both size and time, the first one to match will rotate the file.
   config :rotation_strategy, :validate => ["size_and_time", "size", "time"], :default => "size_and_time"
 
-  # The common use case is to define permission on the root bucket and give Logstash full access to write his logs.
+  # The common use case is to define permission on the root bucket and give Logstash full access to write its logs.
   # In some circonstances you need finer grained permission on subfolder, this allow you to disable the check at startup.
   config :validate_credentials_on_root_bucket, :validate => :boolean, :default => true
 
@@ -185,7 +185,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     end
 
     if @time_file.nil? && @size_file.nil? || @size_file == 0 && @time_file == 0
-      raise LogStash::ConfigurationError, "Logstash need at `time_file` or `size_file` greather than 0"
+      raise LogStash::ConfigurationError, "The S3 plugin must have at least one of time_file or size_file set to a value greater than 0"
     end
 
     @file_repository = FileRepository.new(@tags, @encoding, @temporary_directory)
@@ -216,7 +216,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
       begin
         @file_repository.get_file(prefix_key) { |file| file.write(encoded) }
-        # The output should stop accepting new events coming in, since he cannot do anything with them anymore.
+        # The output should stop accepting new events coming in, since it cannot do anything with them anymore.
         # Log the error and rethrow it.
       rescue Errno::ENOSPC => e
         @logger.error("S3: No space left in temporary directory", :temporary_directory => @temporary_directory)
@@ -351,7 +351,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
         key_parts = Pathname.new(file).relative_path_from(temp_folder_path).to_s.split(::File::SEPARATOR)
         temp_file = TemporaryFile.new(key_parts.slice(1, key_parts.size).join("/"), ::File.open(file, "r"))
 
-        @logger.debug("Recover from crash and uploading", :file => temp_file.path)
+        @logger.debug("Recovering from crash and uploading", :file => temp_file.path)
         @crash_uploader.upload_async(temp_file, :on_complete => method(:clean_temporary_file))
       end
     end
