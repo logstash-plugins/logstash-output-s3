@@ -14,7 +14,7 @@ module LogStash
         end
 
         def rotate?(file)
-          file.size > 0 && Time.now - file.ctime >= time_file
+          file.size > 0 && ((Time.now - file.ctime)/60).floor >= time_file
         end
 
         def need_periodic?

@@ -27,7 +27,7 @@ describe LogStash::Outputs::S3::TimeRotationPolicy do
     end
 
     it "returns true if the file old enough" do
-      allow(file).to receive(:ctime).and_return(Time.now - max_time * 2)
+      allow(file).to receive(:ctime).and_return(Time.now - (max_time * 2 * 60))
       expect(subject.rotate?(file)).to be_truthy
     end
 
@@ -38,7 +38,7 @@ describe LogStash::Outputs::S3::TimeRotationPolicy do
 
   context "When the size of the file is 0" do
     it "returns false if the file old enough" do
-      allow(file).to receive(:ctime).and_return(Time.now - max_time * 2)
+      allow(file).to receive(:ctime).and_return(Time.now - (max_time * 2 * 60))
       expect(subject.rotate?(file)).to be_falsey
     end
 

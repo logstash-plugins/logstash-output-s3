@@ -40,7 +40,7 @@ describe LogStash::Outputs::S3::TemporaryFileFactory do
 
     it "includes the date" do
       n = Time.now
-      expect(subject.current.path).to match(/ls.s3.#{Socket.gethostname}.#{n.strftime("%Y-%m-%dT")}\d+\.\d+\./)
+      expect(subject.current.path).to include(n.strftime("%Y-%m-%dT"))
     end
 
     it "include the file key in the path"  do
@@ -50,7 +50,7 @@ describe LogStash::Outputs::S3::TemporaryFileFactory do
 
     it "create a unique directory in the temporary directory for each file" do
       uuid = "hola"
-      expect(SecureRandom).to receive(:uuid).and_return(uuid)
+      expect(SecureRandom).to receive(:uuid).and_return(uuid).twice
       expect(subject.current.path).to include(uuid)
     end
 
