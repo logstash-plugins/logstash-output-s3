@@ -11,7 +11,7 @@ module LogStash
       #
       # The local structure will look like this.
       #
-      # <TEMPORARY_PATH>/<UUID>/<prefix>/ls.s3.localhost.%Y-%m-%dT%H.%m.tag_es_fb.part1.txt.gz 
+      # <TEMPORARY_PATH>/<UUID>/<prefix>/ls.s3.localhost.%Y-%m-%dT%H.%m.tag_es_fb.part1.txt.gz
       #
       # Since the UUID should be fairly unique I can destroy the whole path when an upload is complete.
       # I do not have to mess around to check if the other directory have file in it before destroying them.
@@ -59,7 +59,7 @@ module LogStash
         end
 
         def generate_name
-          filename = "ls.s3.#{Socket.gethostname}.#{current_time}"
+          filename = "ls.s3.#{SecureRandom.uuid}.#{current_time}"
 
           if tags.size > 0
             "#{filename}.tag_#{tags.join('.')}.part#{counter}.#{extension}"

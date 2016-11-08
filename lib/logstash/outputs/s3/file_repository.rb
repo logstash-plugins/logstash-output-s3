@@ -1,8 +1,10 @@
 # encoding: utf-8
+require "java"
 require "concurrent"
-require "concurrent/map"
 require "concurrent/timer_task"
 require "logstash/util"
+
+java_import "java.util.concurrent.ConcurrentHashMap"
 
 module LogStash
   module Outputs
@@ -28,6 +30,10 @@ module LogStash
           def stale?
             with_lock { |factory| factory.current.size == 0 && (Time.now - factory.current.ctime > @stale_time) }
           end
+
+          def apply(prefix)
+            return self
+          end
         end
 
         def initialize(tags, encoding, temporary_directory,
@@ -35,7 +41,7 @@ module LogStash
                        sweeper_interval = DEFAULT_STATE_SWEEPER_INTERVAL_SECS)
           # The path need to contains the prefix so when we start
           # logtash after a crash we keep the remote structure
-          @prefixed_factories =  Concurrent::Map.new
+          @prefixed_factories =  ConcurrentHashMap.new
 
           @tags = tags
           @encoding = encoding
@@ -48,19 +54,20 @@ module LogStash
         end
 
         def keys
-          @prefixed_factories.keys
+          arr = []
+          @prefixed_factories.keySet.each {|k| arr << k}
+          arr
         end
 
         def each_files
-          @prefixed_factories.each_value do |prefixed_file|
+          @prefixed_factories.values do |prefixed_file|
             prefixed_file.with_lock { |factory| yield factory.current }
           end
         end
 
         # Return the file factory
         def get_factory(prefix_key)
-          @prefixed_factories.compute_if_absent(prefix_key) { PrefixedValue.new(TemporaryFileFactory.new(prefix_key, @tags, @encoding, @temporary_directory), @stale_time) }
-            .with_lock { |factory| yield factory }
+          @prefixed_factories.computeIfAbsent(prefix_key, PrefixedValue.new(TemporaryFileFactory.new(prefix_key, @tags, @encoding, @temporary_directory), @stale_time)).with_lock { |factory| yield factory }
         end
 
         def get_file(prefix_key)
@@ -79,8 +86,10 @@ module LogStash
           @stale_sweeper = Concurrent::TimerTask.new(:execution_interval => @sweeper_interval) do
             LogStash::Util.set_thread_name("S3, Stale factory sweeper")
 
-            @prefixed_factories.each_pair do |k, v|
-              @prefixed_factories.delete_pair(k, v) if v.stale?
+            @prefixed_factories.entrySet.each do |s|
+              if s.getValue.stale?
+                @prefixed_factories.remove(s.getKey, s.getValue)
+              end
             end
           end
 
