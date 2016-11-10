@@ -10,11 +10,11 @@ module LogStash
             raise LogStash::ConfigurationError, "`time_file` need to be greather than 0"
           end
 
-          @time_file = time_file
+          @time_file = time_file * 60
         end
 
         def rotate?(file)
-          file.size > 0 && ((Time.now - file.ctime)/60).floor >= time_file
+          file.size > 0 && (Time.now - file.ctime) >= time_file
         end
 
         def need_periodic?
