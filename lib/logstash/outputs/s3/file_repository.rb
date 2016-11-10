@@ -55,12 +55,12 @@ module LogStash
 
         def keys
           arr = []
-          @prefixed_factories.keySet.each {|k| arr << k}
+          @prefixed_factories.keys.each {|k| arr << k}
           arr
         end
 
         def each_files
-          @prefixed_factories.values do |prefixed_file|
+          @prefixed_factories.elements.each do |prefixed_file|
             prefixed_file.with_lock { |factory| yield factory.current }
           end
         end
@@ -82,15 +82,18 @@ module LogStash
           @prefixed_factories.size
         end
 
+        def remove_stale(k, v)
+          if v.stale?
+            @prefixed_factories.remove(k, v)
+            v.with_lock{ |factor| factor.current.delete!}
+          end
+        end
+
         def start_stale_sweeper
           @stale_sweeper = Concurrent::TimerTask.new(:execution_interval => @sweeper_interval) do
             LogStash::Util.set_thread_name("S3, Stale factory sweeper")
 
-            @prefixed_factories.entrySet.each do |s|
-              if s.getValue.stale?
-                @prefixed_factories.remove(s.getKey, s.getValue)
-              end
-            end
+            @prefixed_factories.forEach{|k,v| remove_stale(k,v)}
           end
 
           @stale_sweeper.execute
