@@ -14,14 +14,19 @@ module LogStash
 
         def_delegators :@fd, *DELEGATES_METHODS
 
-        def initialize(key, fd)
+        def initialize(key, fd, temp_path)
           @fd = fd
           @key = key
+          @temp_path = temp_path
           @created_at = Time.now
         end
 
         def ctime
           @created_at
+        end
+
+        def temp_path
+          @temp_path
         end
 
         def key
@@ -33,7 +38,8 @@ module LogStash
         # we delete the root of the UUID, using a UUID also remove the risk of deleting unwanted file, it acts as
         # a sandbox.
         def delete!
-          ::FileUtils.rm_rf(path.gsub(/#{Regexp.escape(key)}$/, ""))
+          @fd.close
+          ::FileUtils.rm_rf(@temp_path, :secure => true)
         end
 
         def empty?

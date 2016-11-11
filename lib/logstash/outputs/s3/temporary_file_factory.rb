@@ -31,14 +31,17 @@ module LogStash
           @tags = tags
           @encoding = encoding
           @temporary_directory = temporary_directory
+          @lock = Mutex.new
 
           rotate!
         end
 
         def rotate!
-          @current = new_file
-          increment_counter
-          @current
+          @lock.synchronize {
+            @current = new_file
+            increment_counter
+            @current
+          }
         end
 
         private
@@ -71,18 +74,18 @@ module LogStash
         def new_file
           uuid = SecureRandom.uuid
           name = generate_name
-          path = ::File.join(temporary_directory, uuid, prefix)
+          path = ::File.join(temporary_directory, uuid)
           key = ::File.join(prefix, name)
 
-          FileUtils.mkdir_p(path)
+          FileUtils.mkdir_p(::File.join(path, prefix))
 
           io = if gzip?
-                 Zlib::GzipWriter.open(::File.join(path, name))
+                 Zlib::GzipWriter.open(::File.join(path, key))
                else
-                 ::File.open(::File.join(path, name), FILE_MODE)
+                 ::File.open(::File.join(path, key), FILE_MODE)
                end
 
-          TemporaryFile.new(key, io)
+          TemporaryFile.new(key, io, path)
         end
       end
     end
