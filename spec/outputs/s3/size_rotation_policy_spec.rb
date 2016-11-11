@@ -7,11 +7,12 @@ require "fileutils"
 describe LogStash::Outputs::S3::SizeRotationPolicy do
   subject { described_class.new(size_file) }
 
+  let(:temporary_directory) {  Stud::Temporary.directory }
   let(:temporary_file) { Stud::Temporary.file }
   let(:name) { "foobar" }
   let(:content) { "hello" * 1000 }
   let(:size_file) { 10 } # in bytes
-  let(:file) { LogStash::Outputs::S3::TemporaryFile.new(name, temporary_file) }
+  let(:file) { LogStash::Outputs::S3::TemporaryFile.new(name, temporary_file, temporary_directory) }
 
   it "returns true if the size on disk is higher than the `size_file`" do
     file.write(content)

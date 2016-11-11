@@ -4,7 +4,7 @@ require "concurrent"
 require "concurrent/timer_task"
 require "logstash/util"
 
-java_import "java.util.concurrent.ConcurrentHashMap"
+ConcurrentHashMap = java.util.concurrent.ConcurrentHashMap
 
 module LogStash
   module Outputs
@@ -34,6 +34,23 @@ module LogStash
           def apply(prefix)
             return self
           end
+
+          def delete!
+            with_lock{ |factory| factory.current.delete! }
+          end
+        end
+
+        class FactoryInitializer
+          def initialize(tags, encoding, temporary_directory, stale_time)
+            @tags = tags
+            @encoding = encoding
+            @temporary_directory = temporary_directory
+            @stale_time = stale_time
+          end
+
+          def apply(prefix_key)
+            PrefixedValue.new(TemporaryFileFactory.new(prefix_key, @tags, @encoding, @temporary_directory), @stale_time)
+          end
         end
 
         def initialize(tags, encoding, temporary_directory,
@@ -43,20 +60,15 @@ module LogStash
           # logtash after a crash we keep the remote structure
           @prefixed_factories =  ConcurrentHashMap.new
 
-          @tags = tags
-          @encoding = encoding
-          @temporary_directory = temporary_directory
-
-          @stale_time = stale_time
           @sweeper_interval = sweeper_interval
+
+          @factory_initializer = FactoryInitializer.new(tags, encoding, temporary_directory, stale_time)
 
           start_stale_sweeper
         end
 
         def keys
-          arr = []
-          @prefixed_factories.keys.each {|k| arr << k}
-          arr
+          @prefixed_factories.keySet
         end
 
         def each_files
@@ -67,7 +79,7 @@ module LogStash
 
         # Return the file factory
         def get_factory(prefix_key)
-          @prefixed_factories.computeIfAbsent(prefix_key, PrefixedValue.new(TemporaryFileFactory.new(prefix_key, @tags, @encoding, @temporary_directory), @stale_time)).with_lock { |factory| yield factory }
+          @prefixed_factories.computeIfAbsent(prefix_key, @factory_initializer).with_lock { |factory| yield factory }
         end
 
         def get_file(prefix_key)
@@ -85,7 +97,7 @@ module LogStash
         def remove_stale(k, v)
           if v.stale?
             @prefixed_factories.remove(k, v)
-            v.with_lock{ |factor| factor.current.delete!}
+            v.delete!
           end
         end
 

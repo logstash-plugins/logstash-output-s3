@@ -11,6 +11,7 @@ describe LogStash::Outputs::S3::Uploader do
   let(:bucket_name) { "foobar-bucket" }
   let(:client) { Aws::S3::Client.new(stub_responses: true) }
   let(:bucket) { Aws::S3::Bucket.new(bucket_name, :client => client) }
+  let(:temporary_directory) { Stud::Temporary.pathname }
   let(:temporary_file) { Stud::Temporary.file }
   let(:key) { "foobar" }
   let(:upload_options) { {} }
@@ -24,7 +25,7 @@ describe LogStash::Outputs::S3::Uploader do
   end
 
   let(:file) do
-    f = LogStash::Outputs::S3::TemporaryFile.new(key, temporary_file)
+    f = LogStash::Outputs::S3::TemporaryFile.new(key, temporary_file, temporary_directory)
     f.write("random content")
     f.fsync
     f
