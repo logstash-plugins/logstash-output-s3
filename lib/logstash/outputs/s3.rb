@@ -112,7 +112,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # If you define file_size you have a number of files in consideration of the section and the current tag.
   # 0 stay all time on listerner, beware if you specific 0 and size_file 0, because you will not put the file on bucket,
   # for now the only thing this plugin can do is to put the file when logstash restart.
-  config :time_file, :validate => :number, :default => 15 * 60
+  config :time_file, :validate => :number, :default => 15
 
   ## IMPORTANT: if you use multiple instance of s3, you should specify on one of them the "restore=> true" and on the others "restore => false".
   ## This is hack for not destroy the new files after restoring the initial files.
@@ -136,10 +136,10 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   config :prefix, :validate => :string, :default => ''
 
   # Specify how many workers to use to upload the files to S3
-  config :upload_workers_count, :validate => :number, :default => (Concurrent.processor_count * 0.5).round
+  config :upload_workers_count, :validate => :number, :default => (Concurrent.processor_count * 0.5).ceil
 
   # Number of items we can keep in the local queue before uploading them
-  config :upload_queue_size, :validate => :number, :default => 2 * (Concurrent.processor_count * 0.25).round
+  config :upload_queue_size, :validate => :number, :default => 2 * (Concurrent.processor_count * 0.25).ceil
 
   # The version of the S3 signature hash to use. Normally uses the internal client default, can be explicitly
   # specified here
@@ -349,7 +349,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     Dir.glob(::File.join(@temporary_directory, "**/*")) do |file|
       if ::File.file?(file)
         key_parts = Pathname.new(file).relative_path_from(temp_folder_path).to_s.split(::File::SEPARATOR)
-        temp_file = TemporaryFile.new(key_parts.slice(1, key_parts.size).join("/"), ::File.open(file, "r"))
+        temp_file = TemporaryFile.new(key_parts.slice(1, key_parts.size).join("/"), ::File.open(file, "r"), key_parts.slice(0, 1))
 
         @logger.debug("Recovering from crash and uploading", :file => temp_file.path)
         @crash_uploader.upload_async(temp_file, :on_complete => method(:clean_temporary_file))

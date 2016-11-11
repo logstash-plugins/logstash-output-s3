@@ -34,6 +34,22 @@ describe LogStash::Outputs::S3::FileRepository do
     end
   end
 
+  it "returns the same file for the same dynamic prefix key" do
+    prefix = "%{type}/%{+YYYY}/%{+MM}/%{+dd}/"
+    event = LogStash::Event.new({ "type" => "syslog"})
+    key = event.sprintf(prefix)
+    file_path = nil
+
+
+    subject.get_file(key) do |file|
+      file_path = file.path
+    end
+
+    subject.get_file(key) do |file|
+      expect(file.path).to eq(file_path)
+    end
+  end
+
   it "returns different file for different prefix keys" do
     file_path = nil
 
@@ -72,21 +88,27 @@ describe LogStash::Outputs::S3::FileRepository do
 
   it "returns all available keys" do
     subject.get_file(prefix_key) { |file| file.write("something") }
-    expect(subject.keys).to eq([prefix_key])
+    expect(subject.keys.toArray).to eq([prefix_key])
   end
 
   it "clean stale factories" do
-    file_repository = described_class.new(tags, encoding, temporary_directory, 1, 1)
-    expect(file_repository.size).to eq(0)
-    file_repository.get_factory(prefix_key) do |factory|
+    @file_repository = described_class.new(tags, encoding, temporary_directory, 1, 1)
+    expect(@file_repository.size).to eq(0)
+    path = ""
+    @file_repository.get_factory(prefix_key) do |factory|
       factory.current.write("hello")
       # force a rotation so we get an empty file that will get stale.
       factory.rotate!
+      path = factory.current.temp_path
     end
 
-    file_repository.get_file("another-prefix") { |file| file.write("hello") }
-    expect(file_repository.size).to eq(2)
-    try(10) { expect(file_repository.size).to eq(1) }
+    @file_repository.get_file("another-prefix") { |file| file.write("hello") }
+    expect(@file_repository.size).to eq(2)
+    @file_repository.keys.each do |k|
+      puts k
+    end
+    try(10) { expect(@file_repository.size).to eq(1) }
+    expect(File.directory?(path)).to be_falsey
   end
 end
 

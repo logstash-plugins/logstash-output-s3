@@ -8,10 +8,11 @@ describe LogStash::Outputs::S3::SizeAndTimeRotationPolicy do
   let(:time_file) { 1 }
   subject { described_class.new(file_size, time_file) }
 
+  let(:temporary_directory) { Stud::Temporary.pathname }
   let(:temporary_file) { Stud::Temporary.file }
   let(:name) { "foobar" }
   let(:content) { "hello" * 1000 }
-  let(:file) { LogStash::Outputs::S3::TemporaryFile.new(name, temporary_file) }
+  let(:file) { LogStash::Outputs::S3::TemporaryFile.new(name, temporary_file, temporary_directory) }
 
   it "raises an exception if the `time_file` is set to 0" do
     expect { described_class.new(100, 0) }.to raise_error(LogStash::ConfigurationError, /time_file/)

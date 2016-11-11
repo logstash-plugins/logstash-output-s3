@@ -16,7 +16,7 @@ describe LogStash::Outputs::S3::TemporaryFile do
     FileUtils.mkdir_p(::File.join(temporary_directory, uuid))
   end
 
-  subject { described_class.new(key, temporary_file) }
+  subject { described_class.new(key, temporary_file, temporary_directory) }
 
   it "returns the key of the file" do
     expect(subject.key).to eq(key)
