@@ -15,7 +15,7 @@ module LogStash
           @size_strategy.rotate?(file) || @time_strategy.rotate?(file)
         end 
 
-        def need_periodic?
+        def needs_periodic?
           true
         end
       end

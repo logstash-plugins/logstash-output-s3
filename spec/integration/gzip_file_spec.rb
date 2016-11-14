@@ -4,11 +4,12 @@ require "logstash/outputs/s3"
 require "logstash/codecs/line"
 require "stud/temporary"
 
-describe "File Time rotation with constant write", :integration => true do
+describe "Gzip File Time rotation with constant write", :integration => true do
   include_context "setup plugin"
 
   let(:time_file) { 0.004 }
-  let(:options) { main_options.merge({ "rotation_strategy" => "time" }) }
+  let(:options) { main_options.merge({ "encoding" => "gzip",
+                                       "rotation_strategy" => "time" }) }
   let(:number_of_events) { 5000 }
   let(:batch_size) { 125 }
   let(:event_encoded) { "Hello world" }
@@ -51,10 +52,11 @@ describe "File Time rotation with constant write", :integration => true do
 
     counter = 0
     bucket_resource.objects(:prefix => prefix).each do |object|
-      target = File.join(download_directory, "#{counter}.txt")
+      target = File.join(download_directory, "#{counter}.gz")
       object.get(:response_target => target)
       counter += 1
     end
-    expect(Dir.glob(File.join(download_directory, "**", "*.txt")).inject(0) { |sum, f| sum + IO.readlines(f).size }).to eq(number_of_events)
+
+    expect(Dir.glob(File.join(download_directory, "**", "*.gz")).inject(0) { |sum, f| sum + Zlib::GzipReader.new(File.open(f)).readlines.size }).to eq(number_of_events)
   end
 end

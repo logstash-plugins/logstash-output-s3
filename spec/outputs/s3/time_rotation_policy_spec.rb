@@ -48,9 +48,13 @@ describe LogStash::Outputs::S3::TimeRotationPolicy do
     end
   end
 
-  context "#need_periodic?" do
+  context "#needs_periodic?" do
     it "return false" do
-      expect(subject.need_periodic?).to be_truthy
+      expect(subject.needs_periodic?).to be_truthy
     end
+  end
+
+  it "convert minute into seconds" do
+    expect(subject.time_file).to eq(60)
   end
 end

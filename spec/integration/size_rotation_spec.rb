@@ -7,8 +7,9 @@ require "stud/temporary"
 describe "Size rotation", :integration => true do
   include_context "setup plugin"
 
-  let(:size_file) { batch_size.times.inject(0) { |sum, i| sum + "#{event_encoded}\n".bytesize } }
-  let(:options) { main_options.merge({ "rotation_strategy" => "size" }) }
+  let(:event_size) { "Hello world".bytesize }
+  let(:size_file) { batch_size * event_size * 2 }
+  let(:options) { main_options.merge({ "rotation_strategy" => "size", "size_file" => size_file }) }
   let(:number_of_events) { 5000 }
   let(:batch_size) { 125 }
   let(:event_encoded) { "Hello world" }
@@ -20,7 +21,7 @@ describe "Size rotation", :integration => true do
     end
     b
   end
-  let(:number_of_files) { number_of_events / batch_size }
+  let(:number_of_files) { number_of_events * event_size / size_file }
 
   before do
     clean_remote_files(prefix)
@@ -37,7 +38,7 @@ describe "Size rotation", :integration => true do
 
   it "Rotates the files based on size" do
     bucket_resource.objects(:prefix => prefix).each do |f|
-      expect(f.size).to eq(size_file)
+      expect(f.size).to be_between(size_file, size_file * 2).inclusive
     end
   end
 

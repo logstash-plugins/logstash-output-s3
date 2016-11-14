@@ -69,9 +69,9 @@ describe LogStash::Outputs::S3::SizeAndTimeRotationPolicy do
     end
   end
 
-  context "#need_periodic?" do
+  context "#needs_periodic?" do
     it "return true" do
-      expect(subject.need_periodic?).to be_truthy
+      expect(subject.needs_periodic?).to be_truthy
     end
   end
 end

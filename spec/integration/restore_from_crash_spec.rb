@@ -22,17 +22,17 @@ describe "Restore from crash", :integration => true do
     factory.current.fsync
 
     (number_of_files - 1).times do
+      factory.rotate!
       factory.current.write(dummy_content)
       factory.current.fsync
-      factory.rotate!
     end
   end
 
   it "uploads the file to the bucket" do
     subject.register
     try(20) do
-      expect(Dir.glob(File.join(temporary_directory, "*")).size).to eq(0)
       expect(bucket_resource.objects(:prefix => prefix).count).to eq(number_of_files)
+      expect(Dir.glob(File.join(temporary_directory, "*")).size).to eq(0)
     end
   end
 end

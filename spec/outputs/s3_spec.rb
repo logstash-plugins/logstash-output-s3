@@ -8,9 +8,15 @@ describe LogStash::Outputs::S3 do
   let(:prefix) { "super/%{server}" }
   let(:region) { "us-east-1" }
   let(:bucket_name) { "mybucket" }
-  let(:options) { { "region" => region, "bucket" => bucket_name, "prefix" => prefix } }
+  let(:options) { { "region" => region,
+                    "bucket" => bucket_name,
+                    "prefix" => prefix,
+                    "restore" => false,
+                    "access_key_id" => "access_key_id",
+                    "secret_access_key" => "secret_access_key"
+  } }
   let(:client) { Aws::S3::Client.new(stub_responses: true) }
-  let(:mock_bucket) { Aws::S3::Bucket.new(bucket_name, :client => client) }
+  let(:mock_bucket) { Aws::S3::Bucket.new(:name => bucket_name, :stub_responses => true, :client => client) }
   let(:event) { LogStash::Event.new({ "server" => "overwatch" }) }
   let(:event_encoded) { "super hype" }
   let(:events_and_encoded) { { event => event_encoded } }
@@ -68,6 +74,10 @@ describe LogStash::Outputs::S3 do
   context "receiving events" do
     before do
       subject.register
+    end
+
+    after do
+      subject.close
     end
 
     it "uses `Event#sprintf` for the prefix" do

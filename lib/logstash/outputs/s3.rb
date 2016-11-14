@@ -11,7 +11,10 @@ require "tmpdir"
 require "fileutils"
 require "set"
 require "pathname"
+require "aws-sdk"
+require "logstash/outputs/s3/patch"
 
+Aws.eager_autoload!
 
 # INFORMATION:
 #
@@ -118,7 +121,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   ## This is hack for not destroy the new files after restoring the initial files.
   ## If you do not specify "restore => true" when logstash crashes or is restarted, the files are not sent into the bucket,
   ## for example if you have single Instance.
-  config :restore, :validate => :boolean, :default => false
+  config :restore, :validate => :boolean, :default => true
 
   # The S3 canned ACL to use when putting the file. Defaults to "private".
   config :canned_acl, :validate => ["private", "public_read", "public_read_write", "authenticated_read"],
@@ -191,12 +194,13 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     @file_repository = FileRepository.new(@tags, @encoding, @temporary_directory)
 
     @rotation = rotation_strategy
-    @uploader = Uploader.new(bucket_resource, @logger,  Concurrent::ThreadPoolExecutor.new({
-                                                                                             :min_threads => 1,
-                                                                                             :max_threads => @upload_workers_count,
-                                                                                             :max_queue => @upload_queue_size,
-                                                                                             :fallback_policy => :caller_runs
-                                                                                           }))
+
+    executor = Concurrent::ThreadPoolExecutor.new({ :min_threads => 1,
+                                                    :max_threads => @upload_workers_count,
+                                                    :max_queue => @upload_queue_size,
+                                                    :fallback_policy => :caller_runs })
+
+    @uploader = Uploader.new(bucket_resource, @logger, executor)
 
     # Restoring from crash will use a new threadpool to slowly recover
     # New events should have more priority.
@@ -204,7 +208,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
     # If we need time based rotation we need to do periodic check on the file
     # to take care of file that were not updated recently
-    start_periodic_check if @rotation.need_periodic?
+    start_periodic_check if @rotation.needs_periodic?
   end
 
   def multi_receive_encoded(events_and_encoded)
@@ -229,7 +233,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   end
 
   def close
-    stop_periodic_check if @rotation.need_periodic?
+    stop_periodic_check if @rotation.needs_periodic?
 
     @logger.debug("Uploading current workspace")
 
@@ -294,7 +298,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   def rotate_if_needed(prefixes)
     prefixes.each do |prefix|
-      # Each file access is thread safe, until the rotation is done then only
+      # Each file access is thread safe,
+      # until the rotation is done then only
       # one thread has access to the resource.
       @file_repository.get_factory(prefix) do |factory|
         temp_file = factory.current
@@ -316,7 +321,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     @logger.debug("Queue for upload", :path => temp_file.path)
 
     # if the queue is full the calling thread will be used to upload
-    temp_file.fsync # make sure we flush the fd before uploading it.
+    temp_file.close # make sure the content is on disk
     if temp_file.size > 0
       @uploader.upload_async(temp_file,
                              :on_complete => method(:clean_temporary_file),
@@ -346,14 +351,12 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     @crash_uploader = Uploader.new(bucket_resource, @logger, CRASH_RECOVERY_THREADPOOL)
 
     temp_folder_path = Pathname.new(@temporary_directory)
-    Dir.glob(::File.join(@temporary_directory, "**/*")) do |file|
-      if ::File.file?(file)
-        key_parts = Pathname.new(file).relative_path_from(temp_folder_path).to_s.split(::File::SEPARATOR)
-        temp_file = TemporaryFile.new(key_parts.slice(1, key_parts.size).join("/"), ::File.open(file, "r"), key_parts.slice(0, 1))
-
-        @logger.debug("Recovering from crash and uploading", :file => temp_file.path)
-        @crash_uploader.upload_async(temp_file, :on_complete => method(:clean_temporary_file))
-      end
+    Dir.glob(::File.join(@temporary_directory, "**/*"))
+      .select { |file| ::File.file?(file) }
+      .each do |file|
+      temp_file = TemporaryFile.create_from_existing_file(file, temp_folder_path)
+      @logger.debug("Recovering from crash and uploading", :file => temp_file.path)
+      @crash_uploader.upload_async(temp_file, :on_complete => method(:clean_temporary_file))
     end
   end
 end

@@ -25,9 +25,7 @@ describe "Upload current file on shutdown", :integration => true do
   before do
     clean_remote_files(prefix)
     subject.register
-    batch.each_slice(batch_size) do |smaller_batch|
-      subject.multi_receive_encoded(smaller_batch)
-    end
+    subject.multi_receive_encoded(batch)
     subject.close
   end
 

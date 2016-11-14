@@ -7,7 +7,7 @@ require "stud/temporary"
 describe "File Time rotation with stale write", :integration => true do
   include_context "setup plugin"
 
-  let(:time_file) { 1 }
+  let(:time_file) { 0.0004 }
   let(:options) { main_options.merge({ "rotation_strategy" => "time" }) }
   let(:number_of_events) { 5000 }
   let(:batch_size) { 125 }
@@ -26,7 +26,7 @@ describe "File Time rotation with stale write", :integration => true do
     clean_remote_files(prefix)
     subject.register
     subject.multi_receive_encoded(batch)
-    sleep(time_file * 5) # the periodic check should have kick int
+    sleep(1) # the periodic check should have kick int
   end
 
   after do
@@ -35,7 +35,9 @@ describe "File Time rotation with stale write", :integration => true do
 
   it "create one file" do
     # using close will upload the current file
-    expect(bucket_resource.objects(:prefix => prefix).count).to eq(1)
+    try(20) do
+      expect(bucket_resource.objects(:prefix => prefix).count).to eq(1)
+    end
   end
 
   it "Persists all events" do
@@ -50,6 +52,9 @@ describe "File Time rotation with stale write", :integration => true do
       object.get(:response_target => target)
       counter += 1
     end
-    expect(Dir.glob(File.join(download_directory, "**", "*.txt")).inject(0) { |sum, f| sum + IO.readlines(f).size }).to eq(number_of_events)
+
+    try(20) do
+      expect(Dir.glob(File.join(download_directory, "**", "*.txt")).inject(0) { |sum, f| sum + IO.readlines(f).size }).to eq(number_of_events)
+    end
   end
 end

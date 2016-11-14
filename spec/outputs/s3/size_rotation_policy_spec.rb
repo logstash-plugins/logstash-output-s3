@@ -32,9 +32,9 @@ describe LogStash::Outputs::S3::SizeRotationPolicy do
     expect { described_class.new(-100) }.to raise_error(LogStash::ConfigurationError, /need to be greather than 0/)
   end
 
-  context "#need_periodic?" do
+  context "#needs_periodic?" do
     it "return false" do
-      expect(subject.need_periodic?).to be_falsey
+      expect(subject.needs_periodic?).to be_falsey
     end
   end
 

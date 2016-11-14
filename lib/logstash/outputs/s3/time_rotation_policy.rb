@@ -17,7 +17,7 @@ module LogStash
           file.size > 0 && (Time.now - file.ctime) >= time_file
         end
 
-        def need_periodic?
+        def needs_periodic?
           true
         end
       end

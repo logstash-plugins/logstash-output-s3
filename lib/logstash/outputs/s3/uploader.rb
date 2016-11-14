@@ -1,6 +1,6 @@
 # encoding: utf-8
 require "logstash/util"
-require "aws-sdk-resources"
+require "aws-sdk"
 
 module LogStash
   module Outputs
@@ -42,8 +42,7 @@ module LogStash
             #
             # Thread might be stuck here, but I think its better than losing anything
             # its either a transient errors or something bad really happened.
-            sleep(TIME_BEFORE_RETRYING_SECONDS)
-            logger.error("Uploading failed, retrying", :exception => e, :path => file.path)
+            logger.error("Uploading failed, retrying", :exception => e, :path => file.path, :backtrace => e.backtrace)
             retry
           end
 
