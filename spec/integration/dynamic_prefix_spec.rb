@@ -85,7 +85,7 @@ describe "Dynamic Prefix", :integration => true do
     end
 
     it "creates dated path" do
-      re = /^#{sandbox}\/\d{4}-\d{2}-\d{2}\/ls\.s3\./
+      re = /^#{sandbox}\/\d{4}-\d{2}-\d{1,2}\/ls\.s3\./
       expect(bucket_resource.objects(:prefix => sandbox).first.key).to match(re)
     end
   end

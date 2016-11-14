@@ -34,12 +34,6 @@ describe LogStash::Outputs::S3::TemporaryFile do
     expect(File.exist?(subject.path)).to be_falsey
   end
 
-  described_class::DELEGATES_METHODS.each do |method_name|
-    it "delegates method `#{method_name}` to file descriptor" do
-      expect(subject.respond_to?(method_name)).to be_truthy
-    end
-  end
-
   it "returns the creation time" do
     expect(subject.ctime).to be < Time.now + 0.5
   end

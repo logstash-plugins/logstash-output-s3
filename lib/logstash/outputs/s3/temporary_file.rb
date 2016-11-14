@@ -10,9 +10,10 @@ module LogStash
       # It make it more OOP and easier to reason with the paths.
       class TemporaryFile
         extend Forwardable
-        DELEGATES_METHODS = [:path, :write, :close, :size, :fsync]
 
-        def_delegators :@fd, *DELEGATES_METHODS
+        def_delegators :@fd, :path, :write, :close, :fsync
+
+        attr_reader :fd
 
         def initialize(key, fd, temp_path)
           @fd = fd
@@ -27,6 +28,17 @@ module LogStash
 
         def temp_path
           @temp_path
+        end
+
+        def size
+          # Use the fd size to get the accurate result,
+          # so we dont have to deal with fsync
+          # if the file is close we will use the File::size
+          begin
+            @fd.size
+          rescue IOError
+            ::File.size(path)
+          end
         end
 
         def key
@@ -44,6 +56,14 @@ module LogStash
 
         def empty?
           size == 0
+        end
+
+        def self.create_from_existing_file(file_path, temporary_folder)
+          key_parts = Pathname.new(file_path).relative_path_from(temporary_folder).to_s.split(::File::SEPARATOR)
+
+          TemporaryFile.new(key_parts.slice(1, key_parts.size).join("/"),
+                         ::File.open(file_path, "r"),
+                         ::File.join(temporary_folder, key_parts.slice(0, 1)))
         end
       end
     end

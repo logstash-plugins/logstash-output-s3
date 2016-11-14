@@ -15,15 +15,15 @@ module LogStash
         # Ensure that all access or work done
         # on a factory is threadsafe
         class PrefixedValue
-          def initialize(factory, stale_time)
-            @factory = factory
+          def initialize(file_factory, stale_time)
+            @file_factory = file_factory
             @lock = Mutex.new
             @stale_time = stale_time
           end
 
           def with_lock
             @lock.synchronize {
-              yield @factory
+              yield @file_factory
             }
           end
 

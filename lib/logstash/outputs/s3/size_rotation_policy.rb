@@ -17,7 +17,7 @@ module LogStash
           file.size >= size_file
         end
 
-        def need_periodic?
+        def needs_periodic?
           false
         end
       end

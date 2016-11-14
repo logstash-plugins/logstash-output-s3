@@ -34,7 +34,7 @@ describe LogStash::Outputs::S3::Uploader do
   subject { described_class.new(bucket, logger, threadpool) }
 
   it "upload file to the s3 bucket" do
-    subject.upload(file)
+    expect { subject.upload(file) }.not_to raise_error
   end
 
   it "execute a callback when the upload is complete" do

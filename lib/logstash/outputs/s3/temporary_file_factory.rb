@@ -2,6 +2,8 @@
 require "socket"
 require "securerandom"
 require "fileutils"
+require "zlib"
+require "forwardable"
 
 module LogStash
   module Outputs
@@ -80,12 +82,40 @@ module LogStash
           FileUtils.mkdir_p(::File.join(path, prefix))
 
           io = if gzip?
-                 Zlib::GzipWriter.open(::File.join(path, key))
+                 # We have to use this wrapper because we cannot access the size of the
+                 # file directly on the gzip writer.
+                 IOWrappedGzip.new(::File.open(::File.join(path, key), FILE_MODE))
                else
                  ::File.open(::File.join(path, key), FILE_MODE)
                end
 
           TemporaryFile.new(key, io, path)
+        end
+
+        class IOWrappedGzip
+          extend Forwardable
+
+          def_delegators :@gzip_writer, :write, :close
+          attr_reader :file_io, :gzip_writer
+
+          def initialize(file_io)
+            @file_io = file_io
+            @gzip_writer = Zlib::GzipWriter.open(file_io)
+          end
+
+          def path
+            @gzip_writer.to_io.path
+          end
+
+          def size
+            # to get the current file size
+            @gzip_writer.flush
+            @gzip_writer.to_io.size
+          end
+
+          def fsync
+            @gzip_writer.to_io.fsync
+          end
         end
       end
     end
