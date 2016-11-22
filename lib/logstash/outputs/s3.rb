@@ -159,7 +159,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   def aws_service_endpoint(region)
     return {
-      :s3_endpoint => region == 'us-east-1' ? 's3.amazonaws.com' : "s3-#{region}.amazonaws.com"
+      :s3_endpoint => region == 'us-east-1' ? 's3.amazonaws.com' : (region == 'cn-north-1' ? "s3.#{region}.amazonaws.com.cn" : "s3-#{region}.amazonaws.com")
     }
   end
 
