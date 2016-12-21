@@ -323,7 +323,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   end
 
   def aws_service_endpoint(region)
-    { :s3_endpoint => region == 'us-east-1' ? 's3.amazonaws.com' : "s3-#{region}.amazonaws.com"}
+    { :s3_endpoint => region == 'us-east-1' ? 's3.amazonaws.com' : (
+        'cn-north-1' ? "s3.#{region}.amazonaws.com.cn" : "s3-#{region}.amazonaws.com") }
   end
 
   def rotate_if_needed(prefixes)
