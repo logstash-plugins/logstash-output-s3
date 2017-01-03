@@ -1,3 +1,6 @@
+## 4.0.1
+  - Improved Error logging for S3 validation. Now specific S3 perms errors are logged
+
 ## 4.0.0
     - This version is a complete rewrite over version 3.0.0 See #103
     - This Plugin now uses the V2 version of the SDK, this make sure we receive the latest updates and changes.
