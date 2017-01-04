@@ -1,27 +1,30 @@
+## 4.0.3
+  - When configuring the `canned_acl` options of the plugins the role was not applied correctly to the created object: #7
+
 ## 4.0.2
-- Fixed AWS authentication when using instance profile credentials.
+  - Fixed AWS authentication when using instance profile credentials.
 
 ## 4.0.1
   - Improved Error logging for S3 validation. Now specific S3 perms errors are logged
 
 ## 4.0.0
-    - This version is a complete rewrite over version 3.0.0 See #103
-    - This Plugin now uses the V2 version of the SDK, this make sure we receive the latest updates and changes.
-    - We now uses S3's `upload_file` instead of reading chunks, this method is more efficient and will uses the multipart with threads if the files is too big.
-    - You can now use the `fieldref` syntax in the prefix to dynamically changes the target with the events it receives.
-    - The Upload queue is now a bounded list, this options is necessary to allow back pressure to be communicated back to the pipeline but its configurable by the user.
-    - If the queue is full the plugin will start the upload in the current thread.
-    - The plugin now threadsafe and support the concurrency model `shared`
-    - The rotation strategy can be selected, the recommended is `size_and_time` that will check for both the configured limits (`size` and `time` are also available)
-    - The `restore` option will now use a separate threadpool with an unbounded queue
-    - The `restore` option will not block the launch of logstash and will uses less resources than the real time path
-    - The plugin now uses `multi_receive_encode`, this will optimize the writes to the files
-    - rotate operation are now batched to reduce the number of IO calls.
-    - Empty file will not be uploaded by any rotation rotation strategy
-    - We now use Concurrent-Ruby for the implementation of the java executor
-    - If you have finer grain permission on prefixes or want faster boot, you can disable the credentials check with `validate_credentials_on_root_bucket`
-    - The credentials check will no longer fails if we can't delete the file
-    - We now have a full suite of integration test for all the defined rotation
+  - This version is a complete rewrite over version 3.0.0 See #103
+  - This Plugin now uses the V2 version of the SDK, this make sure we receive the latest updates and changes.
+  - We now uses S3's `upload_file` instead of reading chunks, this method is more efficient and will uses the multipart with threads if the files is too big.
+  - You can now use the `fieldref` syntax in the prefix to dynamically changes the target with the events it receives.
+  - The Upload queue is now a bounded list, this options is necessary to allow back pressure to be communicated back to the pipeline but its configurable by the user.
+  - If the queue is full the plugin will start the upload in the current thread.
+  - The plugin now threadsafe and support the concurrency model `shared`
+  - The rotation strategy can be selected, the recommended is `size_and_time` that will check for both the configured limits (`size` and `time` are also available)
+  - The `restore` option will now use a separate threadpool with an unbounded queue
+  - The `restore` option will not block the launch of logstash and will uses less resources than the real time path
+  - The plugin now uses `multi_receive_encode`, this will optimize the writes to the files
+  - rotate operation are now batched to reduce the number of IO calls.
+  - Empty file will not be uploaded by any rotation rotation strategy
+  - We now use Concurrent-Ruby for the implementation of the java executor
+  - If you have finer grain permission on prefixes or want faster boot, you can disable the credentials check with `validate_credentials_on_root_bucket`
+  - The credentials check will no longer fails if we can't delete the file
+  - We now have a full suite of integration test for all the defined rotation
 
 Fixes: #4 #81 #44 #59 #50
 
