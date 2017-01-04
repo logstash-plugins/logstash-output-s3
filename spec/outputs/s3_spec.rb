@@ -43,6 +43,24 @@ describe LogStash::Outputs::S3 do
       end
     end
 
+    describe "Access control list" do
+      context "when configured" do
+        ["private", "public_read", "public_read_write", "authenticated_read"].each do |permission|
+          it "should return the configured ACL permissions: #{permission}" do
+            s3 = described_class.new(options.merge({ "canned_acl" => permission }))
+            expect(s3.upload_options).to include(:acl => permission)
+          end
+        end
+      end
+
+      context "when not configured" do
+        it "uses private as the default" do
+          s3 = described_class.new(options)
+          expect(s3.upload_options).to include(:acl => "private")
+        end
+      end
+    end
+
     describe "temporary directory" do
       let(:temporary_directory) { Stud::Temporary.pathname }
       let(:options) { super.merge({ "temporary_directory" => temporary_directory }) }
