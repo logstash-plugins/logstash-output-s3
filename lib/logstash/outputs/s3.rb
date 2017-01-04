@@ -262,6 +262,14 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     prefix_key.gsub(PathValidator.matches_re, PREFIX_KEY_NORMALIZE_CHARACTER)
   end
 
+  def upload_options
+    {
+      :acl => @canned_acl,
+      :server_side_encryption => @server_side_encryption ? :aes256 : nil,
+      :content_encoding => @encoding == "gzip" ? "gzip" : nil
+    }
+  end
+
   private
   # We start a task in the background for check for stale files and make sure we rotate them to S3 if needed.
   def start_periodic_check
@@ -286,14 +294,6 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   def aws_service_endpoint(region)
     { :s3_endpoint => region == 'us-east-1' ? 's3.amazonaws.com' : "s3-#{region}.amazonaws.com"}
-  end
-
-  def upload_options
-    {
-      :acl => @cannel_acl,
-      :server_side_encryption => @server_side_encryption ? :aes256 : nil,
-      :content_encoding => @encoding == "gzip" ? "gzip" : nil
-    }
   end
 
   def rotate_if_needed(prefixes)
