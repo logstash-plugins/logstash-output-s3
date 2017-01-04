@@ -253,7 +253,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   end
 
   def full_options
-    options = { :credentials => credentials }
+    options = Hash.new
     options[:s3_signature_version] = @signature_version if @signature_version
     options.merge(aws_options_hash)
   end
@@ -281,7 +281,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   end
 
   def bucket_resource
-    Aws::S3::Bucket.new(@bucket, { :credentials => credentials }.merge(aws_options_hash))
+    Aws::S3::Bucket.new(@bucket, full_options)
   end
 
   def aws_service_endpoint(region)

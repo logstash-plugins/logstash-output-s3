@@ -9,7 +9,7 @@ shared_context "setup plugin" do
   let(:time_file) { 100 }
   let(:tags) { [] }
   let(:prefix) { "home" }
-  let(:region) { "us-east-1" }
+  let(:region) { ENV['AWS_REGION'] }
 
   let(:main_options) do
     {
