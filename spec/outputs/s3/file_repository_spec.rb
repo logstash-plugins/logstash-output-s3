@@ -105,9 +105,6 @@ describe LogStash::Outputs::S3::FileRepository do
 
     @file_repository.get_file("another-prefix") { |file| file.write("hello") }
     expect(@file_repository.size).to eq(2)
-    @file_repository.keys.each do |k|
-      puts k
-    end
     try(10) { expect(@file_repository.size).to eq(1) }
     expect(File.directory?(path)).to be_falsey
   end

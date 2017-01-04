@@ -1,3 +1,6 @@
+## 4.0.2
+- Fixed AWS authentication when using instance profile credentials.
+
 ## 4.0.1
   - Improved Error logging for S3 validation. Now specific S3 perms errors are logged
 
