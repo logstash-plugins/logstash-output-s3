@@ -265,7 +265,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   def upload_options
     {
       :acl => @canned_acl,
-      :server_side_encryption => @server_side_encryption ? :aes256 : nil,
+      :server_side_encryption => @server_side_encryption ? "AES256" : nil,
       :content_encoding => @encoding == "gzip" ? "gzip" : nil
     }
   end
