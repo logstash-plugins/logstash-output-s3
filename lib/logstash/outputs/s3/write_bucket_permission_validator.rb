@@ -7,13 +7,18 @@ module LogStash
   module Outputs
     class S3
       class WriteBucketPermissionValidator
+        attr_reader :logger
 
-        def self.valid?(bucket_resource)
+        def initialize(logger)
+          @logger = logger
+        end
+
+        def valid?(bucket_resource)
           begin
             upload_test_file(bucket_resource)
             true
           rescue StandardError => e
-            @logger.error("Error validating bucket write permissions!",
+            logger.error("Error validating bucket write permissions!",
               :message => e.message,
               :class => e.class.name
               )
@@ -22,7 +27,7 @@ module LogStash
         end
 
         private
-        def self.upload_test_file(bucket_resource)
+        def upload_test_file(bucket_resource)
           generated_at = Time.now
 
           key = "logstash-programmatic-access-test-object-#{generated_at}"
