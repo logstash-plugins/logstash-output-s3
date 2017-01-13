@@ -61,6 +61,43 @@ describe LogStash::Outputs::S3 do
       end
     end
 
+    describe "Service Side Encryption" do
+      context "when configured" do
+        ["AES256", "aws:kms"].each do |sse|
+          it "should return the configured SSE: #{sse}" do
+            s3 = described_class.new(options.merge({ "server_side_encryption" => sse }))
+            expect(s3.upload_options).to include(:server_side_encryption => sse)
+          end
+        end
+      end
+
+      context "when using SSE with KMS and custom key" do
+        it "should return the configured KMS key" do
+          s3 = described_class.new(options.merge({ "server_side_encryption" => "aws:kms",  "ssekms_key_id" => "test"}))
+          expect(s3.upload_options).to include(:server_side_encryption => "aws:kms")
+          expect(s3.upload_options).to include(:ssekms_key_id => "test")
+        end
+      end
+    end
+
+    describe "Storage Class" do
+      context "when configured" do
+        ["STANDARD", "REDUCED_REDUNDANCY", "STANDARD_IA"].each do |storage_class|
+          it "should return the configured storage class: #{storage_class}" do
+            s3 = described_class.new(options.merge({ "storage_class" => storage_class }))
+            expect(s3.upload_options).to include(:storage_class => storage_class)
+          end
+        end
+      end
+
+      context "when not configured" do
+        it "uses STANDARD as the default" do
+          s3 = described_class.new(options)
+          expect(s3.upload_options).to include(:storage_class => "STANDARD")
+        end
+      end
+    end
+
     describe "temporary directory" do
       let(:temporary_directory) { Stud::Temporary.pathname }
       let(:options) { super.merge({ "temporary_directory" => temporary_directory }) }
