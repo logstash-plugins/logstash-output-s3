@@ -4,12 +4,13 @@ require "logstash/outputs/s3/write_bucket_permission_validator"
 require "aws-sdk"
 
 describe LogStash::Outputs::S3::WriteBucketPermissionValidator do
+  let(:logger) { spy(:logger ) }
   let(:bucket_name) { "foobar" }
   let(:obj) { double("s3_object") }
   let(:client) { Aws::S3::Client.new(stub_responses: true) }
   let(:bucket) { Aws::S3::Bucket.new(bucket_name, :client => client) }
 
-  subject { described_class }
+  subject { described_class.new(logger) }
 
   before do
     expect(bucket).to receive(:object).with(any_args).and_return(obj)

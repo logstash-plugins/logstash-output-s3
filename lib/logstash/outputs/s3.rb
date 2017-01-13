@@ -185,7 +185,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       raise LogStash::ConfigurationError, "Logstash must have the permissions to write to the temporary directory: #{@temporary_directory}"
     end
 
-    if @validate_credentials_on_root_bucket && !WriteBucketPermissionValidator.valid?(bucket_resource)
+    if @validate_credentials_on_root_bucket && !WriteBucketPermissionValidator.new(@logger).valid?(bucket_resource)
       raise LogStash::ConfigurationError, "Logstash must have the privileges to write to root bucket `#{@bucket}`, check you credentials or your permissions."
     end
 

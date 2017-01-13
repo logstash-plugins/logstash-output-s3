@@ -25,7 +25,7 @@ describe LogStash::Outputs::S3 do
 
   before do
     allow(subject).to receive(:bucket_resource).and_return(mock_bucket)
-    allow(LogStash::Outputs::S3::WriteBucketPermissionValidator).to receive(:valid?).with(mock_bucket).and_return(true)
+    allow_any_instance_of(LogStash::Outputs::S3::WriteBucketPermissionValidator).to receive(:valid?).with(mock_bucket).and_return(true)
   end
 
   context "#register configuration validation" do
@@ -84,7 +84,7 @@ describe LogStash::Outputs::S3 do
 
     it "allow to not validate credentials" do
       s3 = described_class.new(options.merge({"validate_credentials_on_root_bucket" => false}))
-      expect(LogStash::Outputs::S3::WriteBucketPermissionValidator).not_to receive(:valid?).with(any_args)
+      expect_any_instance_of(LogStash::Outputs::S3::WriteBucketPermissionValidator).not_to receive(:valid?).with(any_args)
       s3.register
     end
   end
