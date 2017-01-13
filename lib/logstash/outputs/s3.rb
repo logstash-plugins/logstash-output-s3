@@ -127,9 +127,18 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   config :canned_acl, :validate => ["private", "public_read", "public_read_write", "authenticated_read"],
          :default => "private"
 
-  # Specifies wether or not to use S3's AES256 server side encryption. Defaults to false.
-  config :server_side_encryption, :validate => :boolean, :default => false
+  # Specifies wether or not to use S3's server side encryption. Defaults to no encryption.
+  config :server_side_encryption, :validate => ["AES256", "aws:kms", ""], :default => ''
 
+  # The key to use when specified along with server_side_encryption => aws:kms.
+  # If server_side_encryption => aws:kms is set but this is not default KMS key is used.
+  # http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingKMSEncryption.html
+  config :ssekms_key_id, :validate => :string, :default => ''
+
+  # Specifies what S3 storage class to use when uploading the file.
+  # More information about the different storage classes can be found:
+  # http://docs.aws.amazon.com/AmazonS3/latest/dev/storage-class-intro.html
+  # Defaults to STANDARD.
   config :storage_class, :validate => ["STANDARD", "REDUCED_REDUNDANCY", "STANDARD_IA"], :default => "STANDARD"
 
   # Set the directory where logstash will store the tmp files before sending it to S3
@@ -267,7 +276,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   def upload_options
     {
       :acl => @canned_acl,
-      :server_side_encryption => @server_side_encryption ? "AES256" : nil,
+      :server_side_encryption => @server_side_encryption != '' ? @server_side_encryption : nil,
+      :ssekms_key_id => @server_side_encryption == "aws:kms" ? @ssekms_key_id : nil,
       :storage_class => @storage_class,
       :content_encoding => @encoding == "gzip" ? "gzip" : nil
     }
