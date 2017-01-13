@@ -1,3 +1,8 @@
+## 4.0.4
+  - Add support for `storage_class` configuration
+  - Fix compatibility with Logstash 2.4
+  - Add support for `aws:kms` server side encryption #104
+
 ## 4.0.3
   - When configuring the `canned_acl` options of the plugins the role was not applied correctly to the created object: #7
 
