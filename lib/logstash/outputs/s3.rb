@@ -130,6 +130,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # Specifies wether or not to use S3's AES256 server side encryption. Defaults to false.
   config :server_side_encryption, :validate => :boolean, :default => false
 
+  config :storage_class, :validate => ["STANDARD", "REDUCED_REDUNDANCY", "STANDARD_IA"], :default => "STANDARD"
+
   # Set the directory where logstash will store the tmp files before sending it to S3
   # default to the current OS temporary directory in linux /tmp/logstash
   config :temporary_directory, :validate => :string, :default => File.join(Dir.tmpdir, "logstash")
@@ -265,7 +267,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   def upload_options
     {
       :acl => @canned_acl,
-      :server_side_encryption => @server_side_encryption ? :aes256 : nil,
+      :server_side_encryption => @server_side_encryption ? "AES256" : nil,
+      :storage_class => @storage_class,
       :content_encoding => @encoding == "gzip" ? "gzip" : nil
     }
   end

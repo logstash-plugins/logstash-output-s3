@@ -7,14 +7,13 @@ module LogStash
   module Outputs
     class S3
       class WriteBucketPermissionValidator
-        include ::LogStash::Util::Loggable
-        
+
         def self.valid?(bucket_resource)
           begin
             upload_test_file(bucket_resource)
             true
           rescue StandardError => e
-            logger.error("Error validating bucket write permissions!", 
+            @logger.error("Error validating bucket write permissions!",
               :message => e.message,
               :class => e.class.name
               )
