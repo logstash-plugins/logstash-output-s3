@@ -78,6 +78,22 @@ describe LogStash::Outputs::S3 do
           expect(s3.upload_options).to include(:ssekms_key_id => "test")
         end
       end
+
+      context "when using SSE with KMS but no custom key" do
+        it "should return the configured KMS key" do
+          s3 = described_class.new(options.merge({ "server_side_encryption" => "aws:kms"}))
+          expect(s3.upload_options).to include(:server_side_encryption => "aws:kms")
+          expect(s3.upload_options).to include(:ssekms_key_id => nil)
+        end
+      end
+
+      context "when not configured" do
+          it "should not be configured" do
+            s3 = described_class.new(options)
+            expect(s3.upload_options).to include(:server_side_encryption => nil)
+            expect(s3.upload_options).to include(:ssekms_key_id => nil)
+          end
+      end
     end
 
     describe "Storage Class" do
