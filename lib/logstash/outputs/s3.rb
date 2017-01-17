@@ -128,7 +128,10 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
          :default => "private"
 
   # Specifies wether or not to use S3's server side encryption. Defaults to no encryption.
-  config :server_side_encryption, :validate => ["AES256", "aws:kms"]
+  config :server_side_encryption, :validate => :boolean, :default => false
+
+  # Specifies what type of encryption to use when SSE is enabled.
+  config :server_side_encryption_algorithm, :validate => ["AES256", "aws:kms"], :default => "AES256"
 
   # The key to use when specified along with server_side_encryption => aws:kms.
   # If server_side_encryption => aws:kms is set but this is not default KMS key is used.
@@ -276,8 +279,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   def upload_options
     {
       :acl => @canned_acl,
-      :server_side_encryption => @server_side_encryption,
-      :ssekms_key_id => @server_side_encryption == "aws:kms" ? @ssekms_key_id : nil,
+      :server_side_encryption => @server_side_encryption ? @server_side_encryption_algorithm : nil,
+      :ssekms_key_id => @server_side_encryption_algorithm == "aws:kms" ? @ssekms_key_id : nil,
       :storage_class => @storage_class,
       :content_encoding => @encoding == "gzip" ? "gzip" : nil
     }
