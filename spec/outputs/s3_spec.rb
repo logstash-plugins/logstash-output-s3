@@ -62,10 +62,18 @@ describe LogStash::Outputs::S3 do
     end
 
     describe "Service Side Encryption" do
+
       context "when configured" do
+          it "should be configure" do
+            s3 = described_class.new(options.merge({ "server_side_encryption" => true }))
+            expect(s3.upload_options).to include(:server_side_encryption => "AES256")
+          end
+        end
+
+      context "when algorithm is configured" do
         ["AES256", "aws:kms"].each do |sse|
           it "should return the configured SSE: #{sse}" do
-            s3 = described_class.new(options.merge({ "server_side_encryption" => sse }))
+            s3 = described_class.new(options.merge({ "server_side_encryption" => true, "server_side_encryption_algorithm" => sse }))
             expect(s3.upload_options).to include(:server_side_encryption => sse)
           end
         end
@@ -73,7 +81,7 @@ describe LogStash::Outputs::S3 do
 
       context "when using SSE with KMS and custom key" do
         it "should return the configured KMS key" do
-          s3 = described_class.new(options.merge({ "server_side_encryption" => "aws:kms",  "ssekms_key_id" => "test"}))
+          s3 = described_class.new(options.merge({ "server_side_encryption" => true, "server_side_encryption_algorithm" => "aws:kms",  "ssekms_key_id" => "test"}))
           expect(s3.upload_options).to include(:server_side_encryption => "aws:kms")
           expect(s3.upload_options).to include(:ssekms_key_id => "test")
         end
@@ -81,7 +89,7 @@ describe LogStash::Outputs::S3 do
 
       context "when using SSE with KMS but no custom key" do
         it "should return the configured KMS key" do
-          s3 = described_class.new(options.merge({ "server_side_encryption" => "aws:kms"}))
+          s3 = described_class.new(options.merge({ "server_side_encryption" => true, "server_side_encryption_algorithm" => "aws:kms"}))
           expect(s3.upload_options).to include(:server_side_encryption => "aws:kms")
           expect(s3.upload_options).to include(:ssekms_key_id => nil)
         end
