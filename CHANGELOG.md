@@ -1,3 +1,7 @@
+## 4.0.5
+  - Delete the file on disk after they are succesfully uploaded to S3 #122 #120
+  - Added logging when an exception occur in the Uploader's `on_complete` callback
+
 ## 4.0.4
   - Add support for `storage_class` configuration
   - Fix compatibility with Logstash 2.4
