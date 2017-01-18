@@ -51,7 +51,7 @@ module LogStash
         # a sandbox.
         def delete!
           @fd.close rescue IOError # force close anyway
-          FileUtils.rm_rf(@temp_path, :secure => true)
+          FileUtils.rm_r(@temp_path, :secure => true)
         end
 
         def empty?
