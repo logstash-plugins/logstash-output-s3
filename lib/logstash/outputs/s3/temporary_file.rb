@@ -50,8 +50,8 @@ module LogStash
         # we delete the root of the UUID, using a UUID also remove the risk of deleting unwanted file, it acts as
         # a sandbox.
         def delete!
-          @fd.close
-          ::FileUtils.rm_rf(@temp_path, :secure => true)
+          @fd.close rescue IOError # force close anyway
+          FileUtils.rm_rf(@temp_path, :secure => true)
         end
 
         def empty?

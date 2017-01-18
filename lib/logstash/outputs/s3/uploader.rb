@@ -42,11 +42,14 @@ module LogStash
             #
             # Thread might be stuck here, but I think its better than losing anything
             # its either a transient errors or something bad really happened.
-            logger.error("Uploading failed, retrying", :exception => e, :path => file.path, :backtrace => e.backtrace)
+            logger.error("Uploading failed, retrying", :exception => e.class, :message => e.message, :path => file.path, :backtrace => e.backtrace)
             retry
           end
 
           options[:on_complete].call(file) unless options[:on_complete].nil?
+        rescue => e
+          logger.error("An error occured in the `on_complete` uploader", :exception => e.class, :message => e.message, :path => file.path, :backtrace => e.backtrace)
+          raise e # reraise it since we don't deal with it now
         end
 
         def stop
