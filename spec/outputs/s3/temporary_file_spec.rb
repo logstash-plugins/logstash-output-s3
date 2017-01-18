@@ -34,6 +34,13 @@ describe LogStash::Outputs::S3::TemporaryFile do
     expect(File.exist?(subject.path)).to be_falsey
   end
 
+  it "successfully delete a file already closed" do
+    subject.close
+    expect(File.exist?(subject.path)).to be_truthy
+    subject.delete!
+    expect(File.exist?(subject.path)).to be_falsey
+  end
+
   it "returns the creation time" do
     expect(subject.ctime).to be < Time.now + 0.5
   end

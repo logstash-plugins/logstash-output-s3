@@ -26,7 +26,7 @@ describe "File Time rotation with stale write", :integration => true do
     clean_remote_files(prefix)
     subject.register
     subject.multi_receive_encoded(batch)
-    sleep(1) # the periodic check should have kick int
+    sleep(5) # the periodic check should have kick in
   end
 
   after do
@@ -55,6 +55,10 @@ describe "File Time rotation with stale write", :integration => true do
 
     try(20) do
       expect(Dir.glob(File.join(download_directory, "**", "*.txt")).inject(0) { |sum, f| sum + IO.readlines(f).size }).to eq(number_of_events)
+    end
+
+    try(10) do
+      expect(Dir.glob(File.join(temporary_directory, "**", "*.txt")).size).to eq(1) # we should only have 1 file left, since we did a rotation
     end
   end
 end
