@@ -28,12 +28,12 @@ Aws.eager_autoload!
 #
 # S3 output files have the following format
 #
-# ls.s3.ip-10-228-27-95.2013-04-18T10.00.tag_hello.part0.txt
+# ls.s3.312bc026-2f5d-49bc-ae9f-5940cf4ad9a6.2013-04-18T10.00.tag_hello.part0.txt
 #
 #
 # |=======
 # | ls.s3 | indicate logstash plugin s3 |
-# | ip-10-228-27-95 | indicates the ip of your machine. |
+# | 312bc026-2f5d-49bc-ae9f-5940cf4ad9a6 | a new, random uuid per file. |
 # | 2013-04-18T10.00 | represents the time whenever you specify time_file. |
 # | tag_hello | this indicates the event's tag. |
 # | part0 | this means if you indicate size_file then it will generate more parts if you file.size > size_file. When a file is full it will be pushed to the bucket and then deleted from the temporary directory. If a file is empty, it is simply deleted.  Empty files will not be pushed |
