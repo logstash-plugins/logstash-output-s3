@@ -115,7 +115,7 @@ module LogStash
               0
             else
               @gzip_writer.flush
-              @gzip_writer.to_io.size_file
+              @gzip_writer.to_io.size
             end
           end
 
