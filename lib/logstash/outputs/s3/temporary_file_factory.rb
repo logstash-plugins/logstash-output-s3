@@ -109,7 +109,14 @@ module LogStash
 
           def size
             # to get the current file size
-            @gzip_writer.pos
+            if @gzip_writer.pos == 0
+              # Ensure a zero file size is returned when nothing has
+              # yet been written to the gzip file.
+              0
+            else
+              @gzip_writer.flush
+              @gzip_writer.to_io.size_file
+            end
           end
 
           def fsync
