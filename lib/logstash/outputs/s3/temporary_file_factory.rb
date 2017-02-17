@@ -109,8 +109,7 @@ module LogStash
 
           def size
             # to get the current file size
-            @gzip_writer.flush
-            @gzip_writer.to_io.size
+            @gzip_writer.pos
           end
 
           def fsync

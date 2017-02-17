@@ -20,6 +20,10 @@ describe LogStash::Outputs::S3::TemporaryFileFactory do
       expect(File.exist?(subject.current.path)).to be_truthy
     end
 
+    it "returns a size equal to zero after file creation" do
+      expect(subject.current.size).to eq(0)
+    end
+
     it "create a temporary file when initialized" do
       expect(subject.current).to be_kind_of(LogStash::Outputs::S3::TemporaryFile)
     end
