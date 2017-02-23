@@ -268,7 +268,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   def full_options
     options = Hash.new
-    options[:s3_signature_version] = @signature_version if @signature_version
+    options[:signature_version] = @signature_version if @signature_version
     options.merge(aws_options_hash)
   end
 
