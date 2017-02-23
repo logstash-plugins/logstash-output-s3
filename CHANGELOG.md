@@ -1,3 +1,8 @@
+## 4.0.6
+  - Fix: Use the right `signature_version` for the SDK v2 #129
+  - Fix an issue to prevent the output to upload empty file to S3 #128
+  - Docs: Update the doc to show the new format of the remote file #126
+
 ## 4.0.5
   - Delete the file on disk after they are succesfully uploaded to S3 #122 #120
   - Added logging when an exception occur in the Uploader's `on_complete` callback
