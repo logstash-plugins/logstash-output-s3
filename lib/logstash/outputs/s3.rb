@@ -71,7 +71,7 @@ Aws.eager_autoload!
 #      bucket => "your_bucket"                  (required)
 #      size_file => 2048                        (optional) - Bytes
 #      time_file => 5                           (optional) - Minutes
-#      format => "plain"                        (optional)
+#      codec => "plain"                         (optional)
 #      canned_acl => "private"                  (optional. Options are "private", "public_read", "public_read_write", "authenticated_read". Defaults to "private" )
 #    }
 #
