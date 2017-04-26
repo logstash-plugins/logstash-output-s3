@@ -45,7 +45,7 @@ describe LogStash::Outputs::S3 do
 
     describe "Access control list" do
       context "when configured" do
-        ["private", "public_read", "public_read_write", "authenticated_read"].each do |permission|
+        ["private", "public-read", "public-read-write", "authenticated-read"].each do |permission|
           it "should return the configured ACL permissions: #{permission}" do
             s3 = described_class.new(options.merge({ "canned_acl" => permission }))
             expect(s3.upload_options).to include(:acl => permission)

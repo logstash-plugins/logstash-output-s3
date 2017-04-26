@@ -72,7 +72,7 @@ Aws.eager_autoload!
 #      size_file => 2048                        (optional) - Bytes
 #      time_file => 5                           (optional) - Minutes
 #      codec => "plain"                         (optional)
-#      canned_acl => "private"                  (optional. Options are "private", "public_read", "public_read_write", "authenticated_read". Defaults to "private" )
+#      canned_acl => "private"                  (optional. Options are "private", "public-read", "public-read-write", "authenticated-read". Defaults to "private" )
 #    }
 #
 class LogStash::Outputs::S3 < LogStash::Outputs::Base
@@ -124,7 +124,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   config :restore, :validate => :boolean, :default => true
 
   # The S3 canned ACL to use when putting the file. Defaults to "private".
-  config :canned_acl, :validate => ["private", "public_read", "public_read_write", "authenticated_read"],
+  config :canned_acl, :validate => ["private", "public-read", "public-read-write", "authenticated-read"],
          :default => "private"
 
   # Specifies wether or not to use S3's server side encryption. Defaults to no encryption.
@@ -372,7 +372,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       .each do |file|
       temp_file = TemporaryFile.create_from_existing_file(file, temp_folder_path)
       @logger.debug("Recovering from crash and uploading", :file => temp_file.path)
-      @crash_uploader.upload_async(temp_file, :on_complete => method(:clean_temporary_file))
+      @crash_uploader.upload_async(temp_file, :on_complete => method(:clean_temporary_file), :upload_options => upload_options)
     end
   end
 end
