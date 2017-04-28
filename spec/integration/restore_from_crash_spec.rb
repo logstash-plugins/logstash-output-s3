@@ -7,7 +7,7 @@ require "stud/temporary"
 describe "Restore from crash", :integration => true do
   include_context "setup plugin"
 
-  let(:options) { main_options.merge({ "restore" => true }) }
+  let(:options) { main_options.merge({ "restore" => true, "canned_acl" => "public-read-write" }) }
 
   let(:number_of_files) { 5 }
   let(:dummy_content) { "foobar\n" * 100 }
@@ -33,6 +33,7 @@ describe "Restore from crash", :integration => true do
     try(20) do
       expect(bucket_resource.objects(:prefix => prefix).count).to eq(number_of_files)
       expect(Dir.glob(File.join(temporary_directory, "*")).size).to eq(0)
+      expect(bucket_resource.objects(:prefix => prefix).first.acl.grants.collect(&:permission)).to include("READ", "WRITE")
     end
   end
 end

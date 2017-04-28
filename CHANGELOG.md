@@ -1,3 +1,7 @@
+## 4.0.7
+  - Fix: `#restore_from_crash` should use the same upload options as the normal uploader. #140
+  - Fix: Wrongly named `canned_acl` options, renamed to "public-read", "public-read-write", "authenticated-read", from the documentation http://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
+
 ## 4.0.6
   - Fix: Use the right `signature_version` for the SDK v2 #129
   - Fix an issue to prevent the output to upload empty file to S3 #128
