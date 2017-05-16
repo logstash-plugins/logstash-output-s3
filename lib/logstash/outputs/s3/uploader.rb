@@ -36,13 +36,16 @@ module LogStash
           begin
             obj = bucket.object(file.key)
             obj.upload_file(file.path, upload_options)
+          rescue Errno::ENOENT => e
+            logger.error("File doesn't exist! Unrecoverable error.", :exception => e.class, :message => e.message, :path => file.path, :backtrace => e.backtrace)
           rescue => e
             # When we get here it usually mean that S3 tried to do some retry by himself (default is 3)
             # When the retry limit is reached or another error happen we will wait and retry.
             #
             # Thread might be stuck here, but I think its better than losing anything
             # its either a transient errors or something bad really happened.
-            logger.error("Uploading failed, retrying", :exception => e.class, :message => e.message, :path => file.path, :backtrace => e.backtrace)
+            logger.error("Uploading failed, retrying.", :exception => e.class, :message => e.message, :path => file.path, :backtrace => e.backtrace)
+            sleep TIME_BEFORE_RETRYING_SECONDS
             retry
           end
 
