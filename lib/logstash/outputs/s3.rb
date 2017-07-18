@@ -198,7 +198,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     end
 
     if @validate_credentials_on_root_bucket && !WriteBucketPermissionValidator.new(@logger).valid?(bucket_resource)
-      raise LogStash::ConfigurationError, "Logstash must have the privileges to write to root bucket `#{@bucket}`, check you credentials or your permissions."
+      raise LogStash::ConfigurationError, "Logstash must have the privileges to write to root bucket `#{@bucket}`, check your credentials or your permissions."
     end
 
     if @time_file.nil? && @size_file.nil? || @size_file == 0 && @time_file == 0
