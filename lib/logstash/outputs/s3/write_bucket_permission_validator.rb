@@ -20,7 +20,8 @@ module LogStash
           rescue StandardError => e
             logger.error("Error validating bucket write permissions!",
               :message => e.message,
-              :class => e.class.name
+              :class => e.class.name,
+              :backtrace => e.backtrace
               )
             false
           end
@@ -37,7 +38,6 @@ module LogStash
             f = Stud::Temporary.file
             f.write(content)
             f.fsync
-            f.close
 
             obj = bucket_resource.object(key)
             obj.upload_file(f)
@@ -50,6 +50,7 @@ module LogStash
               # since we only really need `putobject`.
             end
           ensure
+            f.close
             FileUtils.rm_rf(f.path)
           end
         end
