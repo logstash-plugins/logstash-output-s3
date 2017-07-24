@@ -3,4 +3,5 @@ Gemfile.lock
 .bundle
 vendor
 .rakeTasks
+.idea/*
 *.iml
