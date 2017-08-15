@@ -1,3 +1,6 @@
+## 4.0.10
+  - Fix some documentation issues
+
 ## 4.0.9
  - Correct issue that allows to run on Ruby 9k. #150
 
