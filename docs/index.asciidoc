@@ -170,7 +170,9 @@ Specify the content encoding. Supports ("gzip"). Defaults to "none"
   * Default value is `""`
 
 Specify a prefix to the uploaded filename, this can simulate directories on S3.  Prefix does not require leading slash.
-This option support string interpolation, be warned this can created a lot of temporary local files.
+This option supports logstash interpolation: https://www.elastic.co/guide/en/logstash/current/event-dependent-configuration.html#sprintf;
+for example, files can be prefixed with the event date using `prefix = "%{+YYYY}/%{+MM}/%{+dd}"`.
+Be warned this can created a lot of temporary local files.
 
 [id="plugins-{type}s-{plugin}-proxy_uri"]
 ===== `proxy_uri` 
