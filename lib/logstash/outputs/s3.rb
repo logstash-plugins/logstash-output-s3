@@ -127,7 +127,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   config :canned_acl, :validate => ["private", "public-read", "public-read-write", "authenticated-read"],
          :default => "private"
 
-  # Specifies wether or not to use S3's server side encryption. Defaults to no encryption.
+  # Specifies whether or not to use S3's server side encryption. Defaults to no encryption.
   config :server_side_encryption, :validate => :boolean, :default => false
 
   # Specifies what type of encryption to use when SSE is enabled.
@@ -197,7 +197,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       raise LogStash::ConfigurationError, "Logstash must have the permissions to write to the temporary directory: #{@temporary_directory}"
     end
 
-    if @validate_credentials_on_root_bucket && !WriteBucketPermissionValidator.new(@logger).valid?(bucket_resource)
+    if @validate_credentials_on_root_bucket && !WriteBucketPermissionValidator.new(@logger).valid?(bucket_resource, upload_options)
       raise LogStash::ConfigurationError, "Logstash must have the privileges to write to root bucket `#{@bucket}`, check your credentials or your permissions."
     end
 
