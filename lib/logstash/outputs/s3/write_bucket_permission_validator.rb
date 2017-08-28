@@ -13,9 +13,9 @@ module LogStash
           @logger = logger
         end
 
-        def valid?(bucket_resource)
+        def valid?(bucket_resource, upload_options)
           begin
-            upload_test_file(bucket_resource)
+            upload_test_file(bucket_resource, upload_options)
             true
           rescue StandardError => e
             logger.error("Error validating bucket write permissions!",
@@ -28,7 +28,7 @@ module LogStash
         end
 
         private
-        def upload_test_file(bucket_resource)
+        def upload_test_file(bucket_resource, upload_options)
           generated_at = Time.now
 
           key = "logstash-programmatic-access-test-object-#{generated_at}"
@@ -40,7 +40,7 @@ module LogStash
             f.fsync
 
             obj = bucket_resource.object(key)
-            obj.upload_file(f)
+            obj.upload_file(f, upload_options)
 
             begin
               obj.delete

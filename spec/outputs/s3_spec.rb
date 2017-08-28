@@ -25,7 +25,7 @@ describe LogStash::Outputs::S3 do
 
   before do
     allow(subject).to receive(:bucket_resource).and_return(mock_bucket)
-    allow_any_instance_of(LogStash::Outputs::S3::WriteBucketPermissionValidator).to receive(:valid?).with(mock_bucket).and_return(true)
+    allow_any_instance_of(LogStash::Outputs::S3::WriteBucketPermissionValidator).to receive(:valid?).with(mock_bucket, subject.upload_options).and_return(true)
   end
 
   context "#register configuration validation" do
