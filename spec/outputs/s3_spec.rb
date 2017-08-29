@@ -4,10 +4,6 @@ require "logstash/event"
 require "logstash/codecs/line"
 require "stud/temporary"
 
-unless LogStash::Environment.const_defined?(:LOGSTASH_HOME)
-  LogStash::Environment::LOGSTASH_HOME = File.expand_path("../../", __FILE__)
-end
-
 describe LogStash::Outputs::S3 do
   let(:prefix) { "super/%{server}" }
   let(:region) { "us-east-1" }
