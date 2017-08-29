@@ -9,12 +9,7 @@ describe LogStash::Outputs::S3::WriteBucketPermissionValidator do
   let(:obj) { double("s3_object") }
   let(:client) { Aws::S3::Client.new(stub_responses: true) }
   let(:bucket) { Aws::S3::Bucket.new(bucket_name, :client => client) }
-  let(:upload_options) { { :acl => "private",
-                           :server_side_encryption => nil,
-                           :ssekms_key_id => nil,
-                           :storage_class => "STANDARD",
-                           :content_encoding => nil
-  } }
+  let(:upload_options) { {} }
 
   subject { described_class.new(logger) }
 
