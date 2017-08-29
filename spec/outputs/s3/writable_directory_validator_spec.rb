@@ -2,7 +2,6 @@
 require "logstash/devutils/rspec/spec_helper"
 require "logstash/outputs/s3/writable_directory_validator"
 require "stud/temporary"
-require "spec_helper"
 
 describe LogStash::Outputs::S3::WritableDirectoryValidator do
   let(:temporary_directory) {  File.join(Stud::Temporary.directory, Time.now.to_i.to_s) }

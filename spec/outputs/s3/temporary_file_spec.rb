@@ -4,7 +4,6 @@ require "logstash/outputs/s3/temporary_file"
 require "stud/temporary"
 require "fileutils"
 require "securerandom"
-require "spec_helper"
 
 describe LogStash::Outputs::S3::TemporaryFile do
   let(:content) { "hello world" }

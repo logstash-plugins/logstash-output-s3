@@ -2,7 +2,6 @@
 require "logstash/devutils/rspec/spec_helper"
 require "logstash/outputs/s3/write_bucket_permission_validator"
 require "aws-sdk"
-require "spec_helper"
 
 describe LogStash::Outputs::S3::WriteBucketPermissionValidator do
   let(:logger) { spy(:logger ) }
