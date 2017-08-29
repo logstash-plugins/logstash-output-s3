@@ -2,6 +2,7 @@
 require "logstash/devutils/rspec/spec_helper"
 require "logstash/outputs/s3/time_rotation_policy"
 require "logstash/outputs/s3/temporary_file"
+require "spec_helper"
 
 describe LogStash::Outputs::S3::TimeRotationPolicy do
   subject { described_class.new(max_time) }

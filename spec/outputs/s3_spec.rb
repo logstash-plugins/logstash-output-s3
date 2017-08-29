@@ -3,6 +3,7 @@ require "logstash/outputs/s3"
 require "logstash/event"
 require "logstash/codecs/line"
 require "stud/temporary"
+require "spec_helper"
 
 describe LogStash::Outputs::S3 do
   let(:prefix) { "super/%{server}" }

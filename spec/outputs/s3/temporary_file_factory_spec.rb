@@ -3,6 +3,7 @@ require "logstash/outputs/s3/temporary_file_factory"
 require "logstash/outputs/s3/temporary_file"
 require "stud/temporary"
 require "fileutils"
+require "spec_helper"
 
 describe LogStash::Outputs::S3::TemporaryFileFactory do
   let(:prefix) { "foobar" }
