@@ -4,7 +4,6 @@ require "logstash/outputs/s3/uploader"
 require "logstash/outputs/s3/temporary_file"
 require "aws-sdk"
 require "stud/temporary"
-require "spec_helper"
 
 describe LogStash::Outputs::S3::Uploader do
   let(:logger) { spy(:logger ) }
