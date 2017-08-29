@@ -2,6 +2,7 @@
 require "logstash/devutils/rspec/spec_helper"
 require "logstash/outputs/s3/size_and_time_rotation_policy"
 require "logstash/outputs/s3/temporary_file"
+require "spec_helper"
 
 describe LogStash::Outputs::S3::SizeAndTimeRotationPolicy do
   let(:file_size) { 10 }
