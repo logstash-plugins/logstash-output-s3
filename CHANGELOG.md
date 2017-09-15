@@ -1,3 +1,6 @@
+## 4.0.11
+ - Fixed a randomly occurring error that logged as a missing `__jcreate_meta` method
+
 ## 4.0.10
   - Fix some documentation issues
 
