@@ -41,6 +41,7 @@ module LogStash
         end
 
         class FactoryInitializer
+          include java.util.function.Function
           def initialize(tags, encoding, temporary_directory, stale_time)
             @tags = tags
             @encoding = encoding
