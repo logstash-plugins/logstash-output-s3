@@ -72,7 +72,7 @@ Aws.eager_autoload!
 #      size_file => 2048                        (optional) - Bytes
 #      time_file => 5                           (optional) - Minutes
 #      codec => "plain"                         (optional)
-#      canned_acl => "private"                  (optional. Options are "private", "public-read", "public-read-write", "authenticated-read". Defaults to "private" )
+#      canned_acl => "private"                  (optional. Options are "private", "public-read", "public-read-write", "authenticated-read", "aws-exec-read", "bucket-owner-read", "bucket-owner-full-control", "log-delivery-write". Defaults to "private" )
 #    }
 #
 class LogStash::Outputs::S3 < LogStash::Outputs::Base
@@ -124,7 +124,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   config :restore, :validate => :boolean, :default => true
 
   # The S3 canned ACL to use when putting the file. Defaults to "private".
-  config :canned_acl, :validate => ["private", "public-read", "public-read-write", "authenticated-read"],
+  config :canned_acl, :validate => ["private", "public-read", "public-read-write", "authenticated-read", "aws-exec-read", "bucket-owner-read", "bucket-owner-full-control", "log-delivery-write"],
          :default => "private"
 
   # Specifies wether or not to use S3's server side encryption. Defaults to no encryption.
