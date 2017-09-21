@@ -64,7 +64,7 @@ output {
      size_file => 2048                        (optional) - Bytes
      time_file => 5                           (optional) - Minutes
      codec => "plain"                         (optional)
-     canned_acl => "private"                  (optional. Options are "private", "public-read", "public-read-write", "authenticated-read". Defaults to "private" )
+     canned_acl => "private"                  (optional. Options are "private", "public-read", "public-read-write", "authenticated-read", "aws-exec-read", "bucket-owner-read", "bucket-owner-full-control", "log-delivery-write". Defaults to "private" )
    }
 
 
@@ -79,7 +79,7 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 | <<plugins-{type}s-{plugin}-access_key_id>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-aws_credentials_file>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-bucket>> |<<string,string>>|Yes
-| <<plugins-{type}s-{plugin}-canned_acl>> |<<string,string>>, one of `["private", "public-read", "public-read-write", "authenticated-read"]`|No
+| <<plugins-{type}s-{plugin}-canned_acl>> |<<string,string>>, one of `["private", "public-read", "public-read-write", "authenticated-read", "aws-exec-read", "bucket-owner-read", "bucket-owner-full-control", "log-delivery-write"]`|No
 | <<plugins-{type}s-{plugin}-encoding>> |<<string,string>>, one of `["none", "gzip"]`|No
 | <<plugins-{type}s-{plugin}-prefix>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-proxy_uri>> |<<string,string>>|No
@@ -150,7 +150,7 @@ S3 bucket
 [id="plugins-{type}s-{plugin}-canned_acl"]
 ===== `canned_acl` 
 
-  * Value can be any of: `private`, `public-read`, `public-read-write`, `authenticated-read`
+  * Value can be any of: `private`, `public-read`, `public-read-write`, `authenticated-read`, `aws-exec-read`, `bucket-owner-read`, `bucket-owner-full-control`, `log-delivery-write`
   * Default value is `"private"`
 
 The S3 canned ACL to use when putting the file. Defaults to "private".
