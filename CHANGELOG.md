@@ -1,3 +1,6 @@
+## 4.0.12
+ - Fix bug where output would fail if the s3 bucket had encryption enabled (#146, #155)
+
 ## 4.0.11
  - Fixed a randomly occurring error that logged as a missing `__jcreate_meta` method
 
