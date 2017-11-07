@@ -1,3 +1,6 @@
+## 4.0.13
+  - Update gemspec summary
+
 ## 4.0.12
  - Fix bug where output would fail if the s3 bucket had encryption enabled (#146, #155)
 
