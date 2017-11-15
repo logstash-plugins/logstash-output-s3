@@ -252,8 +252,7 @@ specified here
   * Value type is <<number,number>>
   * Default value is `5242880`
 
-Set the size of file in bytes, this means that files on bucket when have dimension > file_size, they are stored in two or more file.
-If you have tags then it will generate a specific size file for every tags
+This defines when local files should be pushed to s3 (in bytes). When the size of a local temporary file reaches size_file, a log rotation is triggered and  the current log "part" it pushed to s3. It is then deleted from local temporary storage.
 
 [id="plugins-{type}s-{plugin}-ssekms_key_id"]
 ===== `ssekms_key_id` 
