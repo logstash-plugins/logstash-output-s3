@@ -4,7 +4,7 @@
 
 ```
 bundle install
-bundle rspec
+bundle exec rspec
 ```
 
 If you want to run the integration test against a real bucket you need to pass
