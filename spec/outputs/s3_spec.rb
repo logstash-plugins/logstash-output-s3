@@ -24,8 +24,7 @@ describe LogStash::Outputs::S3 do
   subject { described_class.new(options) }
 
   before do
-    allow(subject).to receive(:bucket_resource).and_return(mock_bucket)
-    allow_any_instance_of(LogStash::Outputs::S3::WriteBucketPermissionValidator).to receive(:valid?).with(mock_bucket, subject.upload_options).and_return(true)
+    allow_any_instance_of(LogStash::Outputs::S3::WriteBucketPermissionValidator).to receive(:valid?).and_return(true)
   end
 
   context "#register configuration validation" do
@@ -143,6 +142,29 @@ describe LogStash::Outputs::S3 do
       expect { s3.register }.to raise_error(LogStash::ConfigurationError)
     end
 
+    describe "additional_settings" do
+      context "when enabling force_path_style" do
+        let(:additional_settings) do
+          { "additional_settings" => { "force_path_style" => true } }
+        end
+
+        it "validates the prefix" do
+          expect(Aws::S3::Bucket).to receive(:new).twice.with(anything, hash_including("force_path_style" => true)).and_call_original
+          described_class.new(options.merge(additional_settings)).register
+        end
+      end
+      context "when using a non existing setting" do
+        let(:additional_settings) do
+          { "additional_settings" => { "doesnt_exist" => true } }
+        end
+
+        it "raises an error" do
+          plugin = described_class.new(options.merge(additional_settings))
+          expect { plugin.register }.to raise_error(ArgumentError)
+        end
+      end
+    end
+
     it "allow to not validate credentials" do
       s3 = described_class.new(options.merge({"validate_credentials_on_root_bucket" => false}))
       expect_any_instance_of(LogStash::Outputs::S3::WriteBucketPermissionValidator).not_to receive(:valid?).with(any_args)
@@ -152,6 +174,7 @@ describe LogStash::Outputs::S3 do
 
   context "receiving events" do
     before do
+      allow(subject).to receive(:bucket_resource).and_return(mock_bucket)
       subject.register
     end
 
