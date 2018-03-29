@@ -13,6 +13,7 @@ require "set"
 require "pathname"
 require "aws-sdk"
 require "logstash/outputs/s3/patch"
+require "uri"
 
 Aws.eager_autoload!
 
@@ -64,9 +65,11 @@ Aws.eager_autoload!
 # This is an example of logstash config:
 # [source,ruby]
 # output {
-#    s3{
+#    s3 {
 #      access_key_id => "crazy_key"             (required)
 #      secret_access_key => "monkey_access_key" (required)
+#      endpoint => "http://127.0.0.1:8080"      (optional, used for non-AWS endpoints, default = "")
+#      force_path_style => false                (optional, used for non-AWS endpoints, default = false)
 #      region => "eu-west-1"                    (optional, default = "us-east-1")
 #      bucket => "your_bucket"                  (required)
 #      size_file => 2048                        (optional) - Bytes
@@ -105,6 +108,13 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   # S3 bucket
   config :bucket, :validate => :string, :required => true
+
+  # Specify a custom endpoint for use with non-AWS S3 implementations, e.g.,
+  # Ceph.  Provide a URL in the format http://127.0.0.1:8080/
+  config :endpoint, :validate => :string
+
+  # When false, specify the bucket in the subdomain.  When true, specify the bucket in the path.
+  config :force_path_style, :validate => :boolean, :default => false
 
   # Set the size of file in bytes, this means that files on bucket when have dimension > file_size, they are stored in two or more file.
   # If you have tags then it will generate a specific size file for every tags
@@ -270,6 +280,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     options = Hash.new
     options[:signature_version] = @signature_version if @signature_version
     options.merge(aws_options_hash)
+           .merge(endpoint_options)
   end
 
   def normalize_key(prefix_key)
@@ -284,6 +295,18 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       :storage_class => @storage_class,
       :content_encoding => @encoding == "gzip" ? "gzip" : nil
     }
+  end
+
+  def endpoint_options
+    if @endpoint
+      uri = URI(@endpoint)
+      {
+        :endpoint => @endpoint,
+        :force_path_style => @force_path_style,
+      }
+    else
+      {}
+    end
   end
 
   private
