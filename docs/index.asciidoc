@@ -77,6 +77,7 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 |=======================================================================
 |Setting |Input type|Required
 | <<plugins-{type}s-{plugin}-access_key_id>> |<<string,string>>|No
+| <<plugins-{type}s-{plugin}-additional_settings>> |<<hash,hash>>|No
 | <<plugins-{type}s-{plugin}-aws_credentials_file>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-bucket>> |<<string,string>>|Yes
 | <<plugins-{type}s-{plugin}-canned_acl>> |<<string,string>>, one of `["private", "public-read", "public-read-write", "authenticated-read", "aws-exec-read", "bucket-owner-read", "bucket-owner-full-control", "log-delivery-write"]`|No
@@ -119,6 +120,29 @@ This plugin uses the AWS SDK and supports several ways to get credentials, which
 3. Environment variables `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
 4. Environment variables `AMAZON_ACCESS_KEY_ID` and `AMAZON_SECRET_ACCESS_KEY`
 5. IAM Instance Profile (available when running inside EC2)
+
+[id="plugins-{type}s-{plugin}-additional_settings"]
+===== `additional_settings`
+
+  * Value type is <<hash,hash>>
+  * Default value is `{}`
+
+Key-value pairs of settings and corresponding values used to parametrize
+the connection to S3. See full list in https://docs.aws.amazon.com/sdkforruby/api/Aws/S3/Client.html[the AWS SDK documentation]. Example:
+
+[source,ruby]
+    output {
+      s3 {
+        access_key_id => "1234",
+        secret_access_key => "secret",
+        region => "eu-west-1",
+        bucket => "logstash-test",
+        additional_settings => {
+          "force_path_style => true,
+          "follow_redirects" => false
+        }
+      }
+    }
 
 [id="plugins-{type}s-{plugin}-aws_credentials_file"]
 ===== `aws_credentials_file` 

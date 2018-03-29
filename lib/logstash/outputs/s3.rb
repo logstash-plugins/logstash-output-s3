@@ -106,6 +106,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # S3 bucket
   config :bucket, :validate => :string, :required => true
 
+  config :additional_settings, :validate => :hash, :default => {}
+
   # Set the size of file in bytes, this means that files on bucket when have dimension > file_size, they are stored in two or more file.
   # If you have tags then it will generate a specific size file for every tags
   ##NOTE: define size of file is the better thing, because generate a local temporary file on disk and then put it in bucket.
@@ -267,9 +269,9 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   end
 
   def full_options
-    options = Hash.new
+    options = aws_options_hash || {}
     options[:signature_version] = @signature_version if @signature_version
-    options.merge(aws_options_hash)
+    @additional_settings.merge(options)
   end
 
   def normalize_key(prefix_key)
