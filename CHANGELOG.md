@@ -1,3 +1,10 @@
+## 4.1.0
+  - Add documentation for endpoint, role_arn and role_session_name #174
+  - Add option for additional settings #173
+  - Add more S3 bucket ACLs #158
+  - Handle file not found exception on S3 upload #144
+  - Document prefix interpolation #154
+
 ## 4.0.13
   - Update gemspec summary
 
