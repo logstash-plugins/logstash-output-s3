@@ -1,5 +1,6 @@
 :plugin: s3
 :type: output
+:default_codec: line
 
 ///////////////////////////////////////////
 START - GENERATED VARIABLES, DO NOT EDIT!
@@ -380,3 +381,5 @@ In some circonstances you need finer grained permission on subfolder, this allow
 
 [id="plugins-{type}s-{plugin}-common-options"]
 include::{include_path}/{type}.asciidoc[]
+
+:default_codec!:

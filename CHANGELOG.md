@@ -1,3 +1,6 @@
+## 4.1.1
+  - Docs: Set the default_codec doc attribute.
+
 ## 4.1.0
   - Add documentation for endpoint, role_arn and role_session_name #174
   - Add option for additional settings #173
