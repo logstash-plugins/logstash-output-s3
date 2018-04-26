@@ -275,7 +275,7 @@ The AWS Secret Access Key
   * Value type is <<boolean,boolean>>
   * Default value is `false`
 
-Specifies wether or not to use S3's server side encryption. Defaults to no encryption.
+Specifies whether or not to use S3's server side encryption. Defaults to no encryption.
 
 [id="plugins-{type}s-{plugin}-server_side_encryption_algorithm"]
 ===== `server_side_encryption_algorithm` 
