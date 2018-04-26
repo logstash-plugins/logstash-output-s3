@@ -129,7 +129,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   config :canned_acl, :validate => ["private", "public-read", "public-read-write", "authenticated-read", "aws-exec-read", "bucket-owner-read", "bucket-owner-full-control", "log-delivery-write"],
          :default => "private"
 
-  # Specifies wether or not to use S3's server side encryption. Defaults to no encryption.
+  # Specifies whether or not to use S3's server side encryption. Defaults to no encryption.
   config :server_side_encryption, :validate => :boolean, :default => false
 
   # Specifies what type of encryption to use when SSE is enabled.
