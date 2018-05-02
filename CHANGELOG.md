@@ -1,3 +1,6 @@
+## 4.1.2
+  - Symbolize hash keys for additional_settings hash #179
+
 ## 4.1.1
   - Docs: Set the default_codec doc attribute.
 
