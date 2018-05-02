@@ -149,7 +149,7 @@ describe LogStash::Outputs::S3 do
         end
 
         it "validates the prefix" do
-          expect(Aws::S3::Bucket).to receive(:new).twice.with(anything, hash_including("force_path_style" => true)).and_call_original
+          expect(Aws::S3::Bucket).to receive(:new).twice.with(anything, hash_including(:force_path_style => true)).and_call_original
           described_class.new(options.merge(additional_settings)).register
         end
       end

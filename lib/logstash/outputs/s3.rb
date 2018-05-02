@@ -271,8 +271,20 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   def full_options
     options = aws_options_hash || {}
     options[:signature_version] = @signature_version if @signature_version
-    @additional_settings.merge(options)
+    symbolized_settings.merge(options)
   end
+
+  def symbolized_settings
+    @symbolized_settings ||= symbolize_keys(@additional_settings)
+  end
+
+  def symbolize_keys(hash)
+    return hash unless hash.is_a?(Hash)
+    symbolized = {}
+    hash.each { |key, value| symbolized[key.to_sym] = symbolize_keys(value) }
+    symbolized
+  end
+
 
   def normalize_key(prefix_key)
     prefix_key.gsub(PathValidator.matches_re, PREFIX_KEY_NORMALIZE_CHARACTER)
