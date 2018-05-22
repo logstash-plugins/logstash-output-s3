@@ -58,8 +58,8 @@ This is an example of logstash config:
 [source,ruby]
 output {
    s3{
-     access_key_id => "crazy_key"             (required)
-     secret_access_key => "monkey_access_key" (required)
+     access_key_id => "crazy_key"             (optional)
+     secret_access_key => "monkey_access_key" (optional)
      region => "eu-west-1"                    (optional, default = "us-east-1")
      bucket => "your_bucket"                  (required)
      size_file => 2048                        (optional) - Bytes
