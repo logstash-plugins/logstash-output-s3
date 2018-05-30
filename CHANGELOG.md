@@ -1,3 +1,6 @@
+## 4.1.4
+  - [#185](https://github.com/logstash-plugins/logstash-output-s3/pull/184) Internal: Revert rake pinning to fix upstream builds
+
 ## 4.1.3
   - [#181](https://github.com/logstash-plugins/logstash-output-s3/pull/181) Docs: Fix incorrect characterization of parameters as `required` in example configuration.
   - [#184](https://github.com/logstash-plugins/logstash-output-s3/pull/184) Internal: Pin rake version for jruby-1.7 compatibility
