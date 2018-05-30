@@ -26,5 +26,4 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'logstash-devutils'
   s.add_development_dependency 'logstash-input-generator'
   s.add_development_dependency 'logstash-codec-line'
-  s.add_development_dependency 'rake', '~> 12.2.1' # for JRuby 1.7, Ruby 1.9
 end
