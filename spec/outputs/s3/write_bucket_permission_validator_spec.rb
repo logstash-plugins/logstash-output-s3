@@ -17,6 +17,16 @@ describe LogStash::Outputs::S3::WriteBucketPermissionValidator do
     expect(bucket).to receive(:object).with(any_args).and_return(obj)
   end
 
+  context 'when using upload_options' do
+    let(:upload_options) {{ :server_side_encryption => true }}
+    it 'they are passed through to upload_file' do
+      expect(obj).to receive(:upload_file).with(anything, upload_options)
+      expect(obj).to receive(:delete).and_return(true)
+      expect(subject.valid?(bucket, upload_options)).to be_truthy
+    end
+
+  end
+
   context "when permissions are sufficient" do
     it "returns true" do
       expect(obj).to receive(:upload_file).with(any_args).and_return(true)
