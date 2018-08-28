@@ -15,7 +15,7 @@ module LogStash
 
         def valid?(bucket_resource, upload_options = {})
           begin
-            upload_test_file(bucket_resource)
+            upload_test_file(bucket_resource, upload_options)
             true
           rescue StandardError => e
             logger.error("Error validating bucket write permissions!",
