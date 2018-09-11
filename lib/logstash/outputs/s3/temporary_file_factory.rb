@@ -100,7 +100,7 @@ module LogStash
 
           def initialize(file_io)
             @file_io = file_io
-            @gzip_writer = Zlib::GzipWriter.open(file_io)
+            @gzip_writer = Zlib::GzipWriter.new(file_io)
           end
 
           def path
