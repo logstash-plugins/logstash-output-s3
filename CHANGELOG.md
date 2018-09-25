@@ -1,3 +1,6 @@
+## 4.1.6
+  - Fixed leak of file handles that prevented temporary files from being cleaned up before pipeline restart [#190](https://github.com/logstash-plugins/logstash-output-s3/issues/190)
+
 ## 4.1.5
   - Fixed bucket validation failures when bucket policy requires encryption [#191](https://github.com/logstash-plugins/logstash-output-s3/pull/191)
 
