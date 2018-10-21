@@ -26,6 +26,7 @@ INFORMATION:
 This plugin batches and uploads logstash events into Amazon Simple Storage Service (Amazon S3).
 
 Requirements:
+
 * Amazon S3 Bucket and S3 Access Permissions (Typically access_key_id and secret_access_key)
 * S3 PutObject permission
 
@@ -45,6 +46,7 @@ ls.s3.312bc026-2f5d-49bc-ae9f-5940cf4ad9a6.2013-04-18T10.00.tag_hello.part0.txt
 |=======
 
 Crash Recovery:
+
 * This plugin will recover and upload temporary log files after crash/abnormal termination when using `restore` set to true
 
 
@@ -53,7 +55,7 @@ Crash Recovery:
 
 
 
-#### Usage:
+==== Usage:
 This is an example of logstash config:
 [source,ruby]
 output {
@@ -210,7 +212,7 @@ guaranteed to work correctly with the AWS SDK.
 Specify a prefix to the uploaded filename, this can simulate directories on S3.  Prefix does not require leading slash.
 This option supports logstash interpolation: https://www.elastic.co/guide/en/logstash/current/event-dependent-configuration.html#sprintf;
 for example, files can be prefixed with the event date using `prefix = "%{+YYYY}/%{+MM}/%{+dd}"`.
-Be warned this can created a lot of temporary local files.
+Be warned this can create a lot of temporary local files.
 
 [id="plugins-{type}s-{plugin}-proxy_uri"]
 ===== `proxy_uri` 
@@ -233,6 +235,9 @@ The AWS Region
 
   * Value type is <<boolean,boolean>>
   * Default value is `true`
+
+Used to enable recovery after crash/abnormal termination.
+Temporary log files will be recovered and uploaded.
 
 [id="plugins-{type}s-{plugin}-role_arn"]
 ===== `role_arn`
@@ -349,7 +354,7 @@ default to the current OS temporary directory in linux /tmp/logstash
 
 Set the time, in MINUTES, to close the current sub_time_section of bucket.
 If you define file_size you have a number of files in consideration of the section and the current tag.
-0 stay all time on listerner, beware if you specific 0 and size_file 0, because you will not put the file on bucket,
+0 stay all time on listener, beware if you specific 0 and size_file 0, because you will not put the file on bucket,
 for now the only thing this plugin can do is to put the file when logstash restart.
 
 [id="plugins-{type}s-{plugin}-upload_queue_size"]
@@ -375,7 +380,7 @@ Specify how many workers to use to upload the files to S3
   * Default value is `true`
 
 The common use case is to define permission on the root bucket and give Logstash full access to write its logs.
-In some circonstances you need finer grained permission on subfolder, this allow you to disable the check at startup.
+In some circumstances you need finer grained permission on subfolder, this allow you to disable the check at startup.
 
 
 
