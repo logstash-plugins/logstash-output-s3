@@ -31,6 +31,8 @@ Requirements:
 
 S3 outputs create temporary files into the OS' temporary directory, you can specify where to save them using the `temporary_directory` option.
 
+IMPORTANT: For configurations containing multiple s3 outputs with the restore option enabled, each output should define its own 'temporary_directory'
+
 S3 output files have the following format
 
 ls.s3.312bc026-2f5d-49bc-ae9f-5940cf4ad9a6.2013-04-18T10.00.tag_hello.part0.txt
