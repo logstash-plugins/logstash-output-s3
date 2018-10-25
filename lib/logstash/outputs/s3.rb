@@ -385,8 +385,12 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       .select { |file| ::File.file?(file) }
       .each do |file|
       temp_file = TemporaryFile.create_from_existing_file(file, temp_folder_path)
-      @logger.debug("Recovering from crash and uploading", :file => temp_file.path)
-      @crash_uploader.upload_async(temp_file, :on_complete => method(:clean_temporary_file), :upload_options => upload_options)
+      if temp_file.size > 0
+        @logger.debug("Recovering from crash and uploading", :file => temp_file.path)
+        @crash_uploader.upload_async(temp_file, :on_complete => method(:clean_temporary_file), :upload_options => upload_options)
+      else
+        clean_temporary_file(temp_file)
+      end
     end
   end
 end
