@@ -1,3 +1,6 @@
+## 4.1.7
+  - Fixed issue where on restart, 0 byte files could erroneously be uploaded to s3 [#195](https://github.com/logstash-plugins/logstash-output-s3/issues/195)
+
 ## 4.1.6
   - Fixed leak of file handles that prevented temporary files from being cleaned up before pipeline restart [#190](https://github.com/logstash-plugins/logstash-output-s3/issues/190)
 
