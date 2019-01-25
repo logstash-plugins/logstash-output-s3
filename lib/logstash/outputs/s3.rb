@@ -160,6 +160,9 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # Number of items we can keep in the local queue before uploading them
   config :upload_queue_size, :validate => :number, :default => 2 * (Concurrent.processor_count * 0.25).ceil
 
+  # Files larger than this number are uploaded using the S3 multipart APIs. Default threshold is 15MB.
+  config :upload_multipart_threshold, :validate => :number, :default => 15 * 1024 * 1024
+
   # The version of the S3 signature hash to use. Normally uses the internal client default, can be explicitly
   # specified here
   config :signature_version, :validate => ['v2', 'v4']
@@ -296,7 +299,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       :server_side_encryption => @server_side_encryption ? @server_side_encryption_algorithm : nil,
       :ssekms_key_id => @server_side_encryption_algorithm == "aws:kms" ? @ssekms_key_id : nil,
       :storage_class => @storage_class,
-      :content_encoding => @encoding == "gzip" ? "gzip" : nil
+      :content_encoding => @encoding == "gzip" ? "gzip" : nil,
+      :multipart_threshold => @upload_multipart_threshold
     }
   end
 
