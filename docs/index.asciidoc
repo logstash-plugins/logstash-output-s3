@@ -103,6 +103,7 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 | <<plugins-{type}s-{plugin}-time_file>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-upload_queue_size>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-upload_workers_count>> |<<number,number>>|No
+| <<plugins-{type}s-{plugin}-upload_multipart_threshold>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-validate_credentials_on_root_bucket>> |<<boolean,boolean>>|No
 |=======================================================================
 
@@ -367,6 +368,14 @@ Number of items we can keep in the local queue before uploading them
   * Default value is `4`
 
 Specify how many workers to use to upload the files to S3
+
+[id="plugins-{type}s-{plugin}-upload_multipart_threshold"]
+===== `upload_multipart_threshold`
+
+  * Value type is <<number,number>>
+  * Default value is `15728640`
+
+Files larger than this number are uploaded using the S3 multipart APIs
 
 [id="plugins-{type}s-{plugin}-validate_credentials_on_root_bucket"]
 ===== `validate_credentials_on_root_bucket` 
