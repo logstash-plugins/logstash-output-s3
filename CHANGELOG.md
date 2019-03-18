@@ -1,3 +1,6 @@
+## 4.1.8
+  - Add support for setting mutipart upload threshold [#202](https://github.com/logstash-plugins/logstash-output-s3/pull/202)
+
 ## 4.1.7
   - Fixed issue where on restart, 0 byte files could erroneously be uploaded to s3 [#195](https://github.com/logstash-plugins/logstash-output-s3/issues/195)
 

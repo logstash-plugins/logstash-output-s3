@@ -60,6 +60,23 @@ describe LogStash::Outputs::S3 do
       end
     end
 
+    describe "Multipart upload threshold" do
+      context "when configured" do
+        it "should use the configured threshold" do
+          threshold = 1 * 1024 * 1024
+          s3 = described_class.new(options.merge({ "upload_multipart_threshold" => threshold }))
+          expect(s3.upload_options).to include(:multipart_threshold => threshold)
+        end
+      end
+
+      context "when not configured" do
+        it "should use 15MB as the default" do
+          s3 = described_class.new(options)
+          expect(s3.upload_options).to include(:multipart_threshold => 15 * 1024 * 1024)
+        end
+      end
+    end
+
     describe "Service Side Encryption" do
 
       context "when configured" do

@@ -101,6 +101,7 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 | <<plugins-{type}s-{plugin}-storage_class>> |<<string,string>>, one of `["STANDARD", "REDUCED_REDUNDANCY", "STANDARD_IA"]`|No
 | <<plugins-{type}s-{plugin}-temporary_directory>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-time_file>> |<<number,number>>|No
+| <<plugins-{type}s-{plugin}-upload_multipart_threshold>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-upload_queue_size>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-upload_workers_count>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-validate_credentials_on_root_bucket>> |<<boolean,boolean>>|No
@@ -351,6 +352,14 @@ Set the time, in MINUTES, to close the current sub_time_section of bucket.
 If you define file_size you have a number of files in consideration of the section and the current tag.
 0 stay all time on listerner, beware if you specific 0 and size_file 0, because you will not put the file on bucket,
 for now the only thing this plugin can do is to put the file when logstash restart.
+
+[id="plugins-{type}s-{plugin}-upload_multipart_threshold"]
+===== `upload_multipart_threshold`
+
+  * Value type is <<number,number>>
+  * Default value is `15728640`
+
+Files larger than this number are uploaded using the S3 multipart APIs
 
 [id="plugins-{type}s-{plugin}-upload_queue_size"]
 ===== `upload_queue_size` 
