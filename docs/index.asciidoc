@@ -21,43 +21,41 @@ include::{include_path}/plugin_header.asciidoc[]
 
 ==== Description
 
-INFORMATION:
-
 This plugin batches and uploads logstash events into Amazon Simple Storage Service (Amazon S3).
 
-Requirements:
+S3 outputs create temporary files into the OS' temporary directory. 
+You can specify where to save them using the `temporary_directory` option.
+
+IMPORTANT: For configurations containing multiple s3 outputs with the restore
+option enabled, each output should define its own 'temporary_directory'.
+
+===== Requirements
 
 * Amazon S3 Bucket and S3 Access Permissions (Typically access_key_id and secret_access_key)
 * S3 PutObject permission
 
-S3 outputs create temporary files into the OS' temporary directory, you can specify where to save them using the `temporary_directory` option.
-
-IMPORTANT: For configurations containing multiple s3 outputs with the restore option enabled, each output should define its own 'temporary_directory'
-
-S3 output files have the following format
-
-ls.s3.312bc026-2f5d-49bc-ae9f-5940cf4ad9a6.2013-04-18T10.00.tag_hello.part0.txt
-
+===== S3 output file
+ 
+[source,txt]
+-----
+`ls.s3.312bc026-2f5d-49bc-ae9f-5940cf4ad9a6.2013-04-18T10.00.tag_hello.part0.txt`
+-----
 
 |=======
-| ls.s3 | indicate logstash plugin s3 |
+| ls.s3 | indicates logstash plugin s3 |
 | 312bc026-2f5d-49bc-ae9f-5940cf4ad9a6 | a new, random uuid per file. |
 | 2013-04-18T10.00 | represents the time whenever you specify time_file. |
-| tag_hello | this indicates the event's tag. |
-| part0 | this means if you indicate size_file then it will generate more parts if your file.size > size_file. When a file is full it will be pushed to the bucket and then deleted from the temporary directory. If a file is empty, it is simply deleted.  Empty files will not be pushed |
+| tag_hello | indicates the event's tag. |
+| part0 | If you indicate size_file, it will generate more parts if your file.size > size_file. 
+When a file is full, it gets pushed to the bucket and then deleted from the temporary directory. 
+If a file is empty, it is simply deleted.  Empty files will not be pushed. |
 |=======
 
-Crash Recovery:
+===== Crash Recovery
 
-* This plugin will recover and upload temporary log files after crash/abnormal termination when using `restore` set to true
+This plugin will recover and upload temporary log files after crash/abnormal termination when using `restore` set to true
 
-
-
-
-
-
-
-==== Usage:
+===== Usage
 This is an example of logstash config:
 [source,ruby]
 output {
@@ -124,11 +122,11 @@ output plugins.
 
 This plugin uses the AWS SDK and supports several ways to get credentials, which will be tried in this order:
 
-1. Static configuration, using `access_key_id` and `secret_access_key` params in logstash plugin config
-2. External credentials file specified by `aws_credentials_file`
-3. Environment variables `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
-4. Environment variables `AMAZON_ACCESS_KEY_ID` and `AMAZON_SECRET_ACCESS_KEY`
-5. IAM Instance Profile (available when running inside EC2)
+. Static configuration, using `access_key_id` and `secret_access_key` params in logstash plugin config
+. External credentials file specified by `aws_credentials_file`
+. Environment variables `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+. Environment variables `AMAZON_ACCESS_KEY_ID` and `AMAZON_SECRET_ACCESS_KEY`
+. IAM Instance Profile (available when running inside EC2)
 
 [id="plugins-{type}s-{plugin}-additional_settings"]
 ===== `additional_settings`
@@ -392,8 +390,6 @@ Specify how many workers to use to upload the files to S3
 
 The common use case is to define permission on the root bucket and give Logstash full access to write its logs.
 In some circumstances you need finer grained permission on subfolder, this allow you to disable the check at startup.
-
-
 
 [id="plugins-{type}s-{plugin}-common-options"]
 include::{include_path}/{type}.asciidoc[]
