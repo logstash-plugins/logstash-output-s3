@@ -31,7 +31,7 @@ option enabled, each output should define its own 'temporary_directory'.
 
 ===== Requirements
 
-* Amazon S3 Bucket and S3 Access Permissions (Typically access_key_id and secret_access_key)
+* Amazon S3 Bucket and S3 Access Permissions (Typically access_key_id, secret_access_key and session_token incase MFA is enabled)
 * S3 PutObject permission
 
 ===== S3 output file
