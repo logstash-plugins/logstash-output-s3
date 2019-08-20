@@ -1,3 +1,6 @@
+## 4.1.10
+  - Added clarification for endpoint in documentation [#198](https://github.com/logstash-plugins/logstash-output-s3/pull/198)
+
 ## 4.1.9
   - Added configuration information for multiple s3 outputs to documentation [#196](https://github.com/logstash-plugins/logstash-output-s3/pull/196)
   - Fixed formatting problems and typographical errors [#194](https://github.com/logstash-plugins/logstash-output-s3/pull/194), [#201](https://github.com/logstash-plugins/logstash-output-s3/pull/201), and [#204](https://github.com/logstash-plugins/logstash-output-s3/pull/204)
