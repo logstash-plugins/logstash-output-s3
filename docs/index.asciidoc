@@ -203,6 +203,7 @@ Specify the content encoding. Supports ("gzip"). Defaults to "none"
 The endpoint to connect to. By default it is constructed using the value of `region`.
 This is useful when connecting to S3 compatible services, but beware that these aren't
 guaranteed to work correctly with the AWS SDK.
+The endpoint should be an HTTP or HTTPS URL, e.g. https://example.com
 
 [id="plugins-{type}s-{plugin}-prefix"]
 ===== `prefix` 
