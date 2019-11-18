@@ -122,7 +122,7 @@ describe LogStash::Outputs::S3 do
 
     describe "Storage Class" do
       context "when configured" do
-        ["STANDARD", "REDUCED_REDUNDANCY", "STANDARD_IA"].each do |storage_class|
+        ["STANDARD", "REDUCED_REDUNDANCY", "STANDARD_IA", "ONEZONE_IA"].each do |storage_class|
           it "should return the configured storage class: #{storage_class}" do
             s3 = described_class.new(options.merge({ "storage_class" => storage_class }))
             expect(s3.upload_options).to include(:storage_class => storage_class)

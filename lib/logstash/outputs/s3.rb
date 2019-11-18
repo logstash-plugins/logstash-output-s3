@@ -144,7 +144,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # More information about the different storage classes can be found:
   # http://docs.aws.amazon.com/AmazonS3/latest/dev/storage-class-intro.html
   # Defaults to STANDARD.
-  config :storage_class, :validate => ["STANDARD", "REDUCED_REDUNDANCY", "STANDARD_IA"], :default => "STANDARD"
+  config :storage_class, :validate => ["STANDARD", "REDUCED_REDUNDANCY", "STANDARD_IA", "ONEZONE_IA"], :default => "STANDARD"
 
   # Set the directory where logstash will store the tmp files before sending it to S3
   # default to the current OS temporary directory in linux /tmp/logstash

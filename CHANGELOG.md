@@ -1,3 +1,6 @@
+## 4.2.0
+  - Added ability to specify [ONEZONE_IA](https://aws.amazon.com/s3/storage-classes/#__) as storage_class
+
 ## 4.1.10
   - Added clarification for endpoint in documentation [#198](https://github.com/logstash-plugins/logstash-output-s3/pull/198)
 
