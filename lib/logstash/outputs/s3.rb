@@ -198,12 +198,12 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     # be moved easily.
     unless @prefix.empty?
       if !PathValidator.valid?(prefix)
-        raise LogStash::ConfigurationError, "Prefix must not contains: #{PathValidator::INVALID_CHARACTERS}"
+        raise LogStash::ConfigurationError, "Prefix must not contain: #{PathValidator::INVALID_CHARACTERS}"
       end
     end
-    unless filename.empty?
+    unless @filename.empty?
       if !PathValidator.valid?(filename)
-        raise LogStash::ConfigurationError, "Filename must not contains: #{PathValidator::INVALID_CHARACTERS}"
+        raise LogStash::ConfigurationError, "Filename must not contain: #{PathValidator::INVALID_CHARACTERS}"
       end
     end
 
