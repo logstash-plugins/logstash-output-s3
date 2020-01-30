@@ -315,7 +315,7 @@ specified here
   * Value type is <<number,number>>
   * Default value is `5242880`
 
-Set the size of file in bytes, this means that files on bucket when have dimension > file_size, they are stored in two or more file.
+Set the size of file in bytes, this means that files on bucket when dimension > file_size, are stored in two or more files.
 If you have tags then it will generate a specific size file for every tags
 
 [id="plugins-{type}s-{plugin}-ssekms_key_id"]
@@ -390,7 +390,7 @@ Specify how many workers to use to upload the files to S3
   * Default value is `true`
 
 The common use case is to define permission on the root bucket and give Logstash full access to write its logs.
-In some circumstances you need finer grained permission on subfolder, this allow you to disable the check at startup.
+In some circumstances you need finer grained permission on subfolder, this allows you to disable the check at startup.
 
 [id="plugins-{type}s-{plugin}-common-options"]
 include::{include_path}/{type}.asciidoc[]
