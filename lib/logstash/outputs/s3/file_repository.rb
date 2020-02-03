@@ -31,7 +31,7 @@ module LogStash
             with_lock { |factory| factory.current.size == 0 && (Time.now - factory.current.ctime > @stale_time) }
           end
 
-          def apply(prefix)
+          def apply(prefix, filename)
             return self
           end
 
@@ -49,8 +49,8 @@ module LogStash
             @stale_time = stale_time
           end
 
-          def apply(prefix_key)
-            PrefixedValue.new(TemporaryFileFactory.new(prefix_key, @tags, @encoding, @temporary_directory), @stale_time)
+          def apply(prefix_key, filename_key: "")
+            PrefixedValue.new(TemporaryFileFactory.new(prefix_key, @tags, @encoding, @temporary_directory, filename: filename_key), @stale_time)
           end
         end
 
@@ -79,12 +79,19 @@ module LogStash
         end
 
         # Return the file factory
-        def get_factory(prefix_key)
-          @prefixed_factories.computeIfAbsent(prefix_key, @factory_initializer).with_lock { |factory| yield factory }
+        def get_factory(prefix_key, filename_key: "")
+          key = prefix_key + (filename_key == "" ? "" : ("/" + filename_key))
+          if @prefixed_factories.key?(key)
+            factory = @prefixed_factories[key]
+          else
+            factory = @factory_initializer.apply(prefix_key, filename_key: filename_key)
+            @prefixed_factories[key] = factory
+          end
+          factory.with_lock { |factory| yield factory }
         end
 
-        def get_file(prefix_key)
-          get_factory(prefix_key) { |factory| yield factory.current }
+        def get_file(prefix_key, filename_key: "")
+          get_factory(prefix_key, filename_key: filename_key) { |factory| yield factory.current }
         end
 
         def shutdown

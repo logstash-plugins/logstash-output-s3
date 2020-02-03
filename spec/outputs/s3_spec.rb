@@ -6,11 +6,13 @@ require "stud/temporary"
 
 describe LogStash::Outputs::S3 do
   let(:prefix) { "super/%{server}" }
+  let(:filename) { "%{server}.txt" }
   let(:region) { "us-east-1" }
   let(:bucket_name) { "mybucket" }
   let(:options) { { "region" => region,
                     "bucket" => bucket_name,
                     "prefix" => prefix,
+                    "filename" => "",
                     "restore" => false,
                     "access_key_id" => "access_key_id",
                     "secret_access_key" => "secret_access_key"
@@ -158,6 +160,11 @@ describe LogStash::Outputs::S3 do
       s3 = described_class.new(options.merge({ "prefix" => "`no\><^" }))
       expect { s3.register }.to raise_error(LogStash::ConfigurationError)
     end
+    
+    it "validates the filename" do
+      s3 = described_class.new(options.merge({ "filename" => "`no\><^" }))
+      expect { s3.register }.to raise_error(LogStash::ConfigurationError)
+    end
 
     describe "additional_settings" do
       context "when enabling force_path_style" do
@@ -199,8 +206,11 @@ describe LogStash::Outputs::S3 do
       subject.close
     end
 
-    it "uses `Event#sprintf` for the prefix" do
+    let(:options) { super.merge({ "filename" => filename }) }
+
+    it "uses `Event#sprintf` for the prefix and filename" do
       expect(event).to receive(:sprintf).with(prefix).and_return("super/overwatch")
+      expect(event).to receive(:sprintf).with(filename).and_return("overwatch.txt")
       subject.multi_receive_encoded(events_and_encoded)
     end
   end

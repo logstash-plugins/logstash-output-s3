@@ -151,8 +151,12 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   config :temporary_directory, :validate => :string, :default => File.join(Dir.tmpdir, "logstash")
 
   # Specify a prefix to the uploaded filename, this can simulate directories on S3.  Prefix does not require leading slash.
-  # This option support string interpolation, be warned this can created a lot of temporary local files.
+  # This option supports logstash string interpolation with sprintf. Be warned this can create a lot of temporary local files.
   config :prefix, :validate => :string, :default => ''
+
+  # Specify a filename format to use for uploaded files. If not defined, a unique filename is generated. Invalid characters are replaced with underscores (_).
+  # This option supports logstash string interpolation with sprintf. If you do not configure a unique filename using interpolation, the plugin may overwrite the same file each time an S3 upload takes place.
+  config :filename, :validate => :string, :default => ''
 
   # Specify how many workers to use to upload the files to S3
   config :upload_workers_count, :validate => :number, :default => (Concurrent.processor_count * 0.5).ceil
@@ -194,7 +198,12 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     # be moved easily.
     unless @prefix.empty?
       if !PathValidator.valid?(prefix)
-        raise LogStash::ConfigurationError, "Prefix must not contains: #{PathValidator::INVALID_CHARACTERS}"
+        raise LogStash::ConfigurationError, "Prefix must not contain: #{PathValidator::INVALID_CHARACTERS}"
+      end
+    end
+    unless @filename.empty?
+      if !PathValidator.valid?(filename)
+        raise LogStash::ConfigurationError, "Filename must not contain: #{PathValidator::INVALID_CHARACTERS}"
       end
     end
 
@@ -236,9 +245,10 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     events_and_encoded.each do |event, encoded|
       prefix_key = normalize_key(event.sprintf(@prefix))
       prefix_written_to << prefix_key
+      filename_key = normalize_key(event.sprintf(@filename))
 
       begin
-        @file_repository.get_file(prefix_key) { |file| file.write(encoded) }
+        @file_repository.get_file(prefix_key, filename_key: filename_key) { |file| file.write(encoded) }
         # The output should stop accepting new events coming in, since it cannot do anything with them anymore.
         # Log the error and rethrow it.
       rescue Errno::ENOSPC => e
