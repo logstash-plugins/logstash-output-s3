@@ -90,6 +90,8 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 | <<plugins-{type}s-{plugin}-proxy_uri>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-region>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-restore>> |<<boolean,boolean>>|No
+| <<plugins-{type}s-{plugin}-retry_count>> |<<number,number>>|No
+| <<plugins-{type}s-{plugin}-retry_delay>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-role_arn>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-role_session_name>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-rotation_strategy>> |<<string,string>>, one of `["size_and_time", "size", "time"]`|No
@@ -240,6 +242,22 @@ The AWS Region
 
 Used to enable recovery after crash/abnormal termination.
 Temporary log files will be recovered and uploaded.
+
+[id="plugins-{type}s-{plugin}-retry_count"]
+===== `retry_count`
+
+* Value type is <<number,number>>
+* Default value is `Infinity`
+
+Allows to limit number of retries when S3 uploading fails.
+
+[id="plugins-{type}s-{plugin}-retry_delay"]
+===== `retry_delay`
+
+* Value type is <<number,number>>
+* Default value is `1`
+
+Delay (in seconds) to wait between consecutive retries on upload failures.
 
 [id="plugins-{type}s-{plugin}-role_arn"]
 ===== `role_arn`

@@ -1,3 +1,6 @@
+## 4.3.0
+  -  Feat: Added retry_count and retry_delay config [#218](https://github.com/logstash-plugins/logstash-output-s3/pull/218)
+
 ## 4.2.0
   - Added ability to specify [ONEZONE_IA](https://aws.amazon.com/s3/storage-classes/#__) as storage_class
 
