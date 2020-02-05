@@ -213,7 +213,7 @@ describe LogStash::Outputs::S3 do
       end
     end
 
-    context 'us-east-1' do
+    context 'ap-east-1' do
       let(:region) { 'ap-east-1' }
       it "sets endpoint" do
         expect( subject.send(:bucket_resource).client.config.endpoint.to_s ).to eql 'https://s3.ap-east-1.amazonaws.com'
