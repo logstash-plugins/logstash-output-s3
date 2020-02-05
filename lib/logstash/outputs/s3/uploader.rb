@@ -6,7 +6,7 @@ module LogStash
   module Outputs
     class S3
       class Uploader
-        TIME_BEFORE_RETRYING_SECONDS = 1
+
         DEFAULT_THREADPOOL = Concurrent::ThreadPoolExecutor.new({
                                                                   :min_threads => 1,
                                                                   :max_threads => 8,
@@ -14,13 +14,14 @@ module LogStash
                                                                   :fallback_policy => :caller_runs
                                                                 })
 
-
         attr_reader :bucket, :upload_options, :logger
 
-        def initialize(bucket, logger, threadpool = DEFAULT_THREADPOOL)
+        def initialize(bucket, logger, threadpool = DEFAULT_THREADPOOL, retry_count: Float::INFINITY, retry_delay: 1)
           @bucket = bucket
           @workers_pool = threadpool
           @logger = logger
+          @retry_count = retry_count
+          @retry_delay = retry_delay
         end
 
         def upload_async(file, options = {})
@@ -33,6 +34,7 @@ module LogStash
         def upload(file, options = {})
           upload_options = options.fetch(:upload_options, {})
 
+          tries = 0
           begin
             obj = bucket.object(file.key)
             obj.upload_file(file.path, upload_options)
@@ -44,15 +46,22 @@ module LogStash
             #
             # Thread might be stuck here, but I think its better than losing anything
             # its either a transient errors or something bad really happened.
-            logger.error("Uploading failed, retrying.", :exception => e.class, :message => e.message, :path => file.path, :backtrace => e.backtrace)
-            sleep TIME_BEFORE_RETRYING_SECONDS
-            retry
+            if tries < @retry_count
+              tries += 1
+              logger.warn("Uploading failed, retrying (#{tries}).", :exception => e.class, :message => e.message, :path => file.path, :backtrace => e.backtrace)
+              sleep @retry_delay
+              retry
+            else
+              logger.error("Failed to upload file (retried #{@retry_count} times).", :exception => e.class, :message => e.message, :path => file.path, :backtrace => e.backtrace)
+            end
           end
 
-          options[:on_complete].call(file) unless options[:on_complete].nil?
-        rescue => e
-          logger.error("An error occured in the `on_complete` uploader", :exception => e.class, :message => e.message, :path => file.path, :backtrace => e.backtrace)
-          raise e # reraise it since we don't deal with it now
+          begin
+            options[:on_complete].call(file) unless options[:on_complete].nil?
+          rescue => e
+            logger.error("An error occurred in the `on_complete` uploader", :exception => e.class, :message => e.message, :path => file.path, :backtrace => e.backtrace)
+            raise e # reraise it since we don't deal with it now
+          end
         end
 
         def stop
