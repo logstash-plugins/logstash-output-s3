@@ -326,10 +326,6 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     Aws::S3::Bucket.new(@bucket, full_options)
   end
 
-  def aws_service_endpoint(region)
-    { :s3_endpoint => region == 'us-east-1' ? 's3.amazonaws.com' : "s3-#{region}.amazonaws.com"}
-  end
-
   def rotate_if_needed(prefixes)
     prefixes.each do |prefix|
       # Each file access is thread safe,

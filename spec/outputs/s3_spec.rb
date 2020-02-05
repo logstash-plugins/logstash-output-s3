@@ -204,4 +204,27 @@ describe LogStash::Outputs::S3 do
       subject.multi_receive_encoded(events_and_encoded)
     end
   end
+
+  describe "aws service" do
+    context 'us-east-1' do
+      let(:region) { 'us-east-1' }
+      it "sets endpoint" do
+        expect( subject.send(:bucket_resource).client.config.endpoint.to_s ).to eql 'https://s3.us-east-1.amazonaws.com'
+      end
+    end
+
+    context 'us-east-1' do
+      let(:region) { 'ap-east-1' }
+      it "sets endpoint" do
+        expect( subject.send(:bucket_resource).client.config.endpoint.to_s ).to eql 'https://s3.ap-east-1.amazonaws.com'
+      end
+    end
+
+    context 'cn-northwest-1' do
+      let(:region) { 'cn-northwest-1' }
+      it "sets endpoint" do
+        expect( subject.send(:bucket_resource).client.config.endpoint.to_s ).to eql 'https://s3.cn-northwest-1.amazonaws.com.cn'
+      end
+    end
+  end
 end
