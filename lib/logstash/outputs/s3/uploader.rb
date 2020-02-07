@@ -48,7 +48,7 @@ module LogStash
             # its either a transient errors or something bad really happened.
             if tries < @retry_count
               tries += 1
-              logger.warn("Uploading failed, retrying (#{tries}).", :exception => e.class, :message => e.message, :path => file.path, :backtrace => e.backtrace)
+              logger.warn("Uploading failed, retrying (##{tries} of #{@retry_count})", :exception => e.class, :message => e.message, :path => file.path, :backtrace => e.backtrace)
               sleep @retry_delay
               retry
             else
