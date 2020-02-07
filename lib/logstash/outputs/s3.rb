@@ -188,6 +188,12 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # In some circonstances you need finer grained permission on subfolder, this allow you to disable the check at startup.
   config :validate_credentials_on_root_bucket, :validate => :boolean, :default => true
 
+  # The number of times to retry a failed S3 upload.
+  config :retry_count, :validate => :number, :default => Float::INFINITY
+
+  # The amount of time to wait in seconds before attempting to retry a failed upload.
+  config :retry_delay, :validate => :number, :default => 1
+
   def register
     # I've move the validation of the items into custom classes
     # to prepare for the new config validation that will be part of the core so the core can
@@ -219,7 +225,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
                                                     :max_queue => @upload_queue_size,
                                                     :fallback_policy => :caller_runs })
 
-    @uploader = Uploader.new(bucket_resource, @logger, executor)
+    @uploader = Uploader.new(bucket_resource, @logger, executor, retry_count: @retry_count, retry_delay: @retry_delay)
 
     # Restoring from crash will use a new threadpool to slowly recover
     # New events should have more priority.
