@@ -385,9 +385,8 @@ default to the current OS temporary directory in linux /tmp/logstash
   * Default value is `15`
 
 Set the time, in MINUTES, to close the current sub_time_section of bucket.
-If you define file_size you have a number of files in consideration of the section and the current tag.
-0 stay all time on listener, beware if you specific 0 and size_file 0, because you will not put the file on bucket,
-for now the only thing this plugin can do is to put the file when logstash restart.
+If <<plugins-{type}s-{plugin}-rotation_strategy,`rotation_strategy`>> is set to `time` or `size_and_time`, then `time_file` cannot be set to 0. 
+Otherwise, the plugin raises a configuration error.
 
 [id="plugins-{type}s-{plugin}-upload_multipart_threshold"]
 ===== `upload_multipart_threshold`
