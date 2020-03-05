@@ -114,9 +114,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   config :size_file, :validate => :number, :default => 1024 * 1024 * 5
 
   # Set the time, in MINUTES, to close the current sub_time_section of bucket.
-  # If you define file_size you have a number of files in consideration of the section and the current tag.
-  # 0 stay all time on listerner, beware if you specific 0 and size_file 0, because you will not put the file on bucket,
-  # for now the only thing this plugin can do is to put the file when logstash restart.
+  # If you also define file_size you have a number of files related to the section and the current tag.
+  # If it's valued 0 and rotation_strategy is 'time' or 'size_and_time' then the plugin reaise a configuration error.
   config :time_file, :validate => :number, :default => 15
 
   ## IMPORTANT: if you use multiple instance of s3, you should specify on one of them the "restore=> true" and on the others "restore => false".
