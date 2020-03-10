@@ -1,5 +1,5 @@
 ## 4.3.1
-  -  [DOC] Updated setting descriptions for clarity [#tbd](https://github.com/logstash-plugins/logstash-output-s3/pull/tbd)
+  -  [DOC] Updated setting descriptions for clarity [#219](https://github.com/logstash-plugins/logstash-output-s3/pull/219)and [#220](https://github.com/logstash-plugins/logstash-output-s3/pull/220)
 
 ## 4.3.0
   -  Feat: Added retry_count and retry_delay config [#218](https://github.com/logstash-plugins/logstash-output-s3/pull/218)
