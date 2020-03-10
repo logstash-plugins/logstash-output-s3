@@ -283,8 +283,19 @@ Session name to use when assuming an IAM role.
   * Value can be any of: `size_and_time`, `size`, `time`
   * Default value is `"size_and_time"`
 
-Define the strategy to use to decide when we need to rotate the file and push it to S3,
-The default strategy is to check for both size and time, the first one to match will rotate the file.
+Controls when to close the file and push it to S3. 
+
+If you set this value to `size`, it uses the value set in
+<<plugins-{type}s-{plugin}-size_file,`size_file`>>.
+If you set this value to `time`, it uses the value set in
+<<plugins-{type}s-{plugin}-time_file,`time_file`>>.
+If you set this value to `size_and_time`, it uses the values from
+<<plugins-{type}s-{plugin}-size_file,`size_file`>> and
+<<plugins-{type}s-{plugin}-time_file,`time_file`>>, and splits the file when
+either one matches. 
+
+The default strategy checks both size and time. The first value to
+match triggers file rotation.
 
 [id="plugins-{type}s-{plugin}-secret_access_key"]
 ===== `secret_access_key` 
