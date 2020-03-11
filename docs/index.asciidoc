@@ -421,7 +421,6 @@ Specify how many workers to use to upload the files to S3
 
 The common use case is to define permissions on the root bucket and give Logstash
 full access to write logs. 
-
 In some circumstances, you need more granular permissions on the subfolder. This
 allows you to disable the check at startup.
 
