@@ -1,3 +1,6 @@
+## 4.3.2
+  -  [DOC]Added note that only AWS S3 is supported. No other S3 compatible storage solutions are supported. [#223](https://github.com/logstash-plugins/logstash-output-s3/pull/223)
+
 ## 4.3.1
   -  [DOC] Updated setting descriptions for clarity [#219](https://github.com/logstash-plugins/logstash-output-s3/pull/219) and [#220](https://github.com/logstash-plugins/logstash-output-s3/pull/220)
 
