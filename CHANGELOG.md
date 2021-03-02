@@ -1,5 +1,8 @@
+## 4.3.4
+  -  [DOC] Added note about performance implications of interpolated strings in prefixes [#233](https://github.com/logstash-plugins/logstash-output-s3/pull/233)
+
 ## 4.3.3
-  -  [DOC] Update links to use shared attributes [#230](https://github.com/logstash-plugins/logstash-output-s3/pull/230)
+  -  [DOC] Updated links to use shared attributes [#230](https://github.com/logstash-plugins/logstash-output-s3/pull/230)
 
 ## 4.3.2
   -  [DOC] Added note that only AWS S3 is supported. No other S3 compatible storage solutions are supported. [#223](https://github.com/logstash-plugins/logstash-output-s3/pull/223)

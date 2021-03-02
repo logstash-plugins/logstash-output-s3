@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name            = 'logstash-output-s3'
-  s.version         = '4.3.3'
+  s.version         = '4.3.4'
   s.licenses        = ['Apache-2.0']
   s.summary         = "Sends Logstash events to the Amazon Simple Storage Service"
   s.description     = "This gem is a Logstash plugin required to be installed on top of the Logstash core pipeline using $LS_HOME/bin/logstash-plugin install gemname. This gem is not a stand-alone program"
