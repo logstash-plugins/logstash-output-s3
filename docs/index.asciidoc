@@ -217,13 +217,18 @@ The endpoint should be an HTTP or HTTPS URL, e.g. https://example.com
   * Value type is <<string,string>>
   * Default value is `""`
 
-Specify a prefix to the uploaded filename, this can simulate directories on S3.
+Specify a prefix to the uploaded filename to simulate directories on S3.
 Prefix does not require leading slash.
 This option supports
 {logstash-ref}/event-dependent-configuration.html#sprintf[Logstash
-interpolation]; for example, files can be prefixed with the event date using
+interpolation]. For example, files can be prefixed with the event date using
 `prefix = "%{+YYYY}/%{+MM}/%{+dd}"`.
-Be warned this can create a lot of temporary local files.
+
+IMPORTANT: Take care when you are using interpolated strings in prefixes. This
+has the potential to create large numbers of unique prefixes, causing large
+numbers of in-progress uploads. This scenario may result in performance and
+stability issues, which can be further exacerbated when you use a
+rotation_strategy that delays uploads.
 
 [id="plugins-{type}s-{plugin}-proxy_uri"]
 ===== `proxy_uri` 
