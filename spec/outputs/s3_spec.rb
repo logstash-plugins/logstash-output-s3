@@ -140,7 +140,7 @@ describe LogStash::Outputs::S3 do
 
     describe "temporary directory" do
       let(:temporary_directory) { Stud::Temporary.pathname }
-      let(:options) { super.merge({ "temporary_directory" => temporary_directory }) }
+      let(:options) { super().merge({ "temporary_directory" => temporary_directory }) }
 
       it "creates the directory when it doesn't exist" do
         expect(Dir.exist?(temporary_directory)).to be_falsey
