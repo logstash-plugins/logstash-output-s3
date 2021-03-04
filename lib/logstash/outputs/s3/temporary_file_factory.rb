@@ -24,11 +24,18 @@ module LogStash
         TXT_EXTENSION = "txt"
         STRFTIME = "%Y-%m-%dT%H.%M"
 
-        attr_accessor :counter, :tags, :prefix, :encoding, :temporary_directory, :current
+        attr_accessor :counter, :tags, :prefix, :encoding, :temporary_directory, :current, :fname
 
         def initialize(prefix, tags, encoding, temporary_directory)
           @counter = 0
-          @prefix = prefix
+          lsl = prefix.rindex('/')
+          if lsl.nil? or lsl == prefix.size - 1 then
+              @prefix = prefix
+              @fname = nil
+          else
+              @prefix = prefix.slice(0, lsl + 1)
+              @fname = prefix.slice(lsl + 1, prefix.size)
+          end
 
           @tags = tags
           @encoding = encoding
@@ -75,7 +82,7 @@ module LogStash
 
         def new_file
           uuid = SecureRandom.uuid
-          name = generate_name
+          name = fname.nil? ? generate_name : fname
           path = ::File.join(temporary_directory, uuid)
           key = ::File.join(prefix, name)
 
