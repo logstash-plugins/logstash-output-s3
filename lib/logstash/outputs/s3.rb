@@ -164,7 +164,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
   # The version of the S3 signature hash to use. Normally uses the internal client default, can be explicitly
   # specified here
-  config :signature_version, :validate => ['v2', 'v4']
+  config :signature_version, :validate => ['s3', 'v4']
 
   # Define tags to be appended to the file on the S3 bucket.
   #
