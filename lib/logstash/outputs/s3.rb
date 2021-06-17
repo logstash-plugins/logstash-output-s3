@@ -344,10 +344,10 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
         temp_file = factory.current
 
         if @rotation.rotate?(temp_file)
-          @logger.debug("Rotate file",
-                        :strategy => @rotation.class.name,
-                        :key => temp_file.key,
-                        :path => temp_file.path)
+          @logger.debug? && @logger.debug("Rotate file",
+                                          :key => temp_file.key,
+                                          :path => temp_file.path,
+                                          :strategy => @rotation.class.name)
 
           upload_file(temp_file)
           factory.rotate!
@@ -357,7 +357,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   end
 
   def upload_file(temp_file)
-    @logger.debug("Queue for upload", :path => temp_file.path)
+    @logger.debug? && @logger.debug("Queue for upload", :path => temp_file.path)
 
     # if the queue is full the calling thread will be used to upload
     temp_file.close # make sure the content is on disk
@@ -380,7 +380,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   end
 
   def clean_temporary_file(file)
-    @logger.debug("Removing temporary file", :file => file.path)
+    @logger.debug? && @logger.debug("Removing temporary file", :path => file.path)
     file.delete!
   end
 
@@ -395,7 +395,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       .each do |file|
       temp_file = TemporaryFile.create_from_existing_file(file, temp_folder_path)
       if temp_file.size > 0
-        @logger.debug("Recovering from crash and uploading", :file => temp_file.path)
+        @logger.debug? && @logger.debug("Recovering from crash and uploading", :path => temp_file.path)
         @crash_uploader.upload_async(temp_file, :on_complete => method(:clean_temporary_file), :upload_options => upload_options)
       else
         clean_temporary_file(temp_file)
