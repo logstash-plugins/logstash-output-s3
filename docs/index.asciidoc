@@ -395,7 +395,7 @@ Set the directory where logstash will store the tmp files before sending it to S
 default to the current OS temporary directory in linux `/tmp/logstash`.
 
 WARNING: Using multiple S3 outputs with `restore => true` requires unique directories
-per output as all of the directory's contents gets processed and deleted upon recovery.
+per output as all of the directory's contents gets processed and deleted upon recovery, and may cause data loss
 For example, an output using `/tmp/s3` and a second configured with `/tmp/s3/sub` would
 cause issues (having temporary directories `/tmp/s3/sub1` and `/tmp/s3/sub2` is fine).
 
