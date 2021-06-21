@@ -255,9 +255,9 @@ The AWS Region
 Used to enable recovery after crash/abnormal termination.
 Temporary log files will be recovered and uploaded.
 
-NOTE: If you're using multiple S3 outputs than make sure to always set
-<<plugins-{type}s-{plugin}-temporary_directory,`temporary_directory`>> to a
-unique directory, otherwise the recovery mechanism won't work correctly.
+NOTE: If you're using multiple S3 outputs, always set
+<<plugins-{type}s-{plugin}-temporary_directory>> to a
+unique directory. Otherwise the recovery mechanism won't work correctly.
 
 [id="plugins-{type}s-{plugin}-retry_count"]
 ===== `retry_count`
