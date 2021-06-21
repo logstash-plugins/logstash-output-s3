@@ -4,8 +4,6 @@ require "concurrent"
 require "concurrent/timer_task"
 require "logstash/util"
 
-ConcurrentHashMap = java.util.concurrent.ConcurrentHashMap
-
 module LogStash
   module Outputs
     class S3
@@ -59,7 +57,7 @@ module LogStash
                        sweeper_interval = DEFAULT_STATE_SWEEPER_INTERVAL_SECS)
           # The path need to contains the prefix so when we start
           # logtash after a crash we keep the remote structure
-          @prefixed_factories =  ConcurrentHashMap.new
+          @prefixed_factories = java.util.concurrent.ConcurrentHashMap.new
 
           @sweeper_interval = sweeper_interval
 
