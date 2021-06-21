@@ -32,6 +32,7 @@ You can specify where to save them using the `temporary_directory` option.
 
 IMPORTANT: For configurations containing multiple s3 outputs with the `restore`
 option enabled, each output should define its own `temporary_directory`.
+Shared or nested directories can cause data loss upon recovery.
 
 ===== Requirements
 
