@@ -160,13 +160,15 @@ describe LogStash::Outputs::S3 do
     end
 
     describe "additional_settings" do
-      context "when enabling force_path_style" do
+      context "supported settings" do
         let(:additional_settings) do
-          { "additional_settings" => { "force_path_style" => true } }
+          { "additional_settings" => { "force_path_style" => 'true', "ssl_verify_peer" => 'false', "region" => 'eu-west-3' } }
         end
 
         it "validates the prefix" do
-          expect(Aws::S3::Bucket).to receive(:new).twice.with(anything, hash_including(:force_path_style => true)).and_call_original
+          expect(Aws::S3::Bucket).to receive(:new).twice.
+              with(anything, hash_including(:force_path_style => true, :ssl_verify_peer => false, :region => 'eu-west-3')).
+              and_call_original
           described_class.new(options.merge(additional_settings)).register
         end
       end
