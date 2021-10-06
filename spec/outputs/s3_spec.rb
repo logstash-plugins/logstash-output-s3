@@ -162,12 +162,12 @@ describe LogStash::Outputs::S3 do
     describe "additional_settings" do
       context "supported settings" do
         let(:additional_settings) do
-          { "additional_settings" => { "force_path_style" => 'true', "ssl_verify_peer" => 'false', "region" => 'eu-west-3' } }
+          { "additional_settings" => { "force_path_style" => 'true', "ssl_verify_peer" => 'false', "profile" => 'logstash' } }
         end
 
         it "validates the prefix" do
           expect(Aws::S3::Bucket).to receive(:new).twice.
-              with(anything, hash_including(:force_path_style => true, :ssl_verify_peer => false, :region => 'eu-west-3')).
+              with(anything, hash_including(:force_path_style => true, :ssl_verify_peer => false, :profile => 'logstash')).
               and_call_original
           described_class.new(options.merge(additional_settings)).register
         end
