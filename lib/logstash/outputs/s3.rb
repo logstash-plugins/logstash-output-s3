@@ -1,7 +1,6 @@
 # encoding: utf-8
 require "logstash/outputs/base"
 require "logstash/namespace"
-require "logstash/plugin_mixins/aws_config"
 require "stud/temporary"
 require "stud/task"
 require "concurrent"
@@ -11,7 +10,7 @@ require "tmpdir"
 require "fileutils"
 require "set"
 require "pathname"
-require "aws-sdk"
+require "aws-sdk-s3"
 require "logstash/outputs/s3/patch"
 
 Aws.eager_autoload!
@@ -87,7 +86,14 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   require "logstash/outputs/s3/uploader"
   require "logstash/outputs/s3/file_repository"
 
-  include LogStash::PluginMixins::AwsConfig::V2
+  CredentialConfig = Struct.new(
+    :access_key_id,
+    :secret_access_key,
+    :session_token,
+    :profile,
+    :instance_profile_credentials_retries,
+    :instance_profile_credentials_timeout,
+    :region)
 
   PREFIX_KEY_NORMALIZE_CHARACTER = "_"
   PERIODIC_CHECK_INTERVAL_IN_SECONDS = 15
@@ -193,6 +199,53 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # The amount of time to wait in seconds before attempting to retry a failed upload.
   config :retry_delay, :validate => :number, :default => 1
 
+  config :region, :validate => :string, :default => "us-east-1"
+
+  # This plugin uses the AWS SDK and supports several ways to get credentials, which will be tried in this order:
+  #
+  # 1. Static configuration, using `access_key_id` and `secret_access_key` params or `role_arn` in the logstash plugin config
+  # 2. External credentials file specified by `aws_credentials_file`
+  # 3. Environment variables `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+  # 4. Environment variables `AMAZON_ACCESS_KEY_ID` and `AMAZON_SECRET_ACCESS_KEY`
+  # 5. IAM Instance Profile (available when running inside EC2)
+  config :access_key_id, :validate => :string
+
+  # The AWS Secret Access Key
+  config :secret_access_key, :validate => :string
+
+  # Profile
+  config :profile, :validate => :string, :default => "default"
+
+  # The AWS Session token for temporary credential
+  config :session_token, :validate => :password
+
+  # URI to proxy server if required
+  config :proxy_uri, :validate => :string
+
+  # Custom endpoint to connect to s3
+  config :endpoint, :validate => :string
+
+  # The AWS IAM Role to assume, if any.
+  # This is used to generate temporary credentials typically for cross-account access.
+  # See https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html for more information.
+  config :role_arn, :validate => :string
+
+  # Session name to use when assuming an IAM role
+  config :role_session_name, :validate => :string, :default => "logstash"
+
+  # Path to YAML file containing a hash of AWS credentials.
+  # This file will only be loaded if `access_key_id` and
+  # `secret_access_key` aren't set. The contents of the
+  # file should look like this:
+  #
+  # [source,ruby]
+  # ----------------------------------
+  #     :access_key_id: "12345"
+  #     :secret_access_key: "54321"
+  # ----------------------------------
+  #
+  config :aws_credentials_file, :validate => :string
+
   def register
     # I've move the validation of the items into custom classes
     # to prepare for the new config validation that will be part of the core so the core can
@@ -233,6 +286,35 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     # If we need time based rotation we need to do periodic check on the file
     # to take care of file that were not updated recently
     start_periodic_check if @rotation.needs_periodic?
+  end
+
+  def aws_options_hash
+    opts = {}
+
+    if @access_key_id.is_a?(NilClass) ^ @secret_access_key.is_a?(NilClass)
+      @logger.warn("Likely config error: Only one of access_key_id or secret_access_key was provided but not both.")
+    end
+
+    credential_config = CredentialConfig.new(@access_key_id, @secret_access_key, @session_token, @profile, 0, 1, @region)
+    @credentials = Aws::CredentialProviderChain.new(credential_config).resolve
+
+    opts[:credentials] = @credentials
+
+    opts[:http_proxy] = @proxy_uri if @proxy_uri
+
+    if self.respond_to?(:aws_service_endpoint)
+      # used by CloudWatch to basically do the same as bellow (returns { region: region })
+      opts.merge!(self.aws_service_endpoint(@region))
+    else
+      # NOTE: setting :region works with the aws sdk (resolves correct endpoint)
+      opts[:region] = @region
+    end
+
+    if !@endpoint.is_a?(NilClass)
+      opts[:endpoint] = @endpoint
+    end
+
+    return opts
   end
 
   def multi_receive_encoded(events_and_encoded)

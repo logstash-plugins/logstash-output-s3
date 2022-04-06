@@ -2,7 +2,7 @@
 require "logstash/devutils/rspec/spec_helper"
 require "logstash/outputs/s3/uploader"
 require "logstash/outputs/s3/temporary_file"
-require "aws-sdk"
+require "aws-sdk-s3"
 require "stud/temporary"
 
 describe LogStash::Outputs::S3::Uploader do
