@@ -1,3 +1,6 @@
+## 4.3.5
+  -  Feat: cast true/false values for additional_settings [#241](https://github.com/logstash-plugins/logstash-output-s3/pull/241)
+
 ## 4.3.4
   -  [DOC] Added note about performance implications of interpolated strings in prefixes [#233](https://github.com/logstash-plugins/logstash-output-s3/pull/233)
 
