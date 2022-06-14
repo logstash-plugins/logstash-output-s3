@@ -1,20 +1,24 @@
+## 4.3.6
+  - Docs: more documentation on restore + temp dir [#236](https://github.com/logstash-plugins/logstash-output-s3/pull/236)
+    * minor logging improvements - use the same path: naming convention
+
 ## 4.3.5
-  -  Feat: cast true/false values for additional_settings [#241](https://github.com/logstash-plugins/logstash-output-s3/pull/241)
+  - Feat: cast true/false values for additional_settings [#241](https://github.com/logstash-plugins/logstash-output-s3/pull/241)
 
 ## 4.3.4
-  -  [DOC] Added note about performance implications of interpolated strings in prefixes [#233](https://github.com/logstash-plugins/logstash-output-s3/pull/233)
+  - [DOC] Added note about performance implications of interpolated strings in prefixes [#233](https://github.com/logstash-plugins/logstash-output-s3/pull/233)
 
 ## 4.3.3
-  -  [DOC] Updated links to use shared attributes [#230](https://github.com/logstash-plugins/logstash-output-s3/pull/230)
+  - [DOC] Updated links to use shared attributes [#230](https://github.com/logstash-plugins/logstash-output-s3/pull/230)
 
 ## 4.3.2
-  -  [DOC] Added note that only AWS S3 is supported. No other S3 compatible storage solutions are supported. [#223](https://github.com/logstash-plugins/logstash-output-s3/pull/223)
+  - [DOC] Added note that only AWS S3 is supported. No other S3 compatible storage solutions are supported. [#223](https://github.com/logstash-plugins/logstash-output-s3/pull/223)
 
 ## 4.3.1
-  -  [DOC] Updated setting descriptions for clarity [#219](https://github.com/logstash-plugins/logstash-output-s3/pull/219) and [#220](https://github.com/logstash-plugins/logstash-output-s3/pull/220)
+  - [DOC] Updated setting descriptions for clarity [#219](https://github.com/logstash-plugins/logstash-output-s3/pull/219) and [#220](https://github.com/logstash-plugins/logstash-output-s3/pull/220)
 
 ## 4.3.0
-  -  Feat: Added retry_count and retry_delay config [#218](https://github.com/logstash-plugins/logstash-output-s3/pull/218)
+  - Feat: Added retry_count and retry_delay config [#218](https://github.com/logstash-plugins/logstash-output-s3/pull/218)
 
 ## 4.2.0
   - Added ability to specify [ONEZONE_IA](https://aws.amazon.com/s3/storage-classes/#__) as storage_class
