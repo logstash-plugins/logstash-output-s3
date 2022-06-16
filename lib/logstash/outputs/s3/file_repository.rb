@@ -39,7 +39,7 @@ module LogStash
         end
 
         class FactoryInitializer
-          include java.util.function.Function
+
           def initialize(tags, encoding, temporary_directory, stale_time)
             @tags = tags
             @encoding = encoding
@@ -51,9 +51,6 @@ module LogStash
             PrefixedValue.new(TemporaryFileFactory.new(prefix_key, @tags, @encoding, @temporary_directory), @stale_time)
           end
 
-          def apply(prefix_key)
-            PrefixedValue.new(TemporaryFileFactory.new(prefix_key, @tags, @encoding, @temporary_directory), @stale_time)
-          end
         end
 
         def initialize(tags, encoding, temporary_directory,

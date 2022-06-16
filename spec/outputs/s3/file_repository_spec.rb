@@ -89,7 +89,7 @@ describe LogStash::Outputs::S3::FileRepository do
   it "returns all available keys" do
     subject.get_file(prefix_key) { |file| file.write("something") }
     expect(subject.keys).to include(prefix_key)
-    expect(subject.keys.to_a.size).to eq(1)
+    expect(subject.keys.size).to eq(1)
   end
 
   it "clean stale factories" do
