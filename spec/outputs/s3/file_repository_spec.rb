@@ -105,9 +105,14 @@ describe LogStash::Outputs::S3::FileRepository do
 
     @file_repository.get_file("another-prefix") { |file| file.write("hello") }
     expect(@file_repository.size).to eq(2)
+    sleep 1.2 # allow sweeper to kick in
     try(10) { expect(@file_repository.size).to eq(1) }
     expect(File.directory?(path)).to be_falsey
+
+    sleep 1.5 # allow sweeper to kick in, again
+    expect(@file_repository.size).to eq(1)
   end
+
 end
 
 

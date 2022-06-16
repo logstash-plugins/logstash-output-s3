@@ -1,3 +1,6 @@
+## 4.3.7
+  - Refactor: avoid usage of CHM (JRuby 9.3.4 work-around) [#248](https://github.com/logstash-plugins/logstash-output-s3/pull/248)
+
 ## 4.3.6
   - Docs: more documentation on restore + temp dir [#236](https://github.com/logstash-plugins/logstash-output-s3/pull/236)
     * minor logging improvements - use the same path: naming convention
