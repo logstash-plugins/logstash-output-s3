@@ -55,8 +55,8 @@ module LogStash
         def initialize(tags, encoding, temporary_directory,
                        stale_time = DEFAULT_STALE_TIME_SECS,
                        sweeper_interval = DEFAULT_STATE_SWEEPER_INTERVAL_SECS)
-          # The path need to contains the prefix so when we start
-          # logtash after a crash we keep the remote structure
+          # The path needs to contain the prefix so when we start
+          # Logstash after a crash we keep the remote structure
           @prefixed_factories = java.util.concurrent.ConcurrentHashMap.new
 
           @sweeper_interval = sweeper_interval

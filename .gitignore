@@ -5,3 +5,10 @@ vendor
 .rakeTasks
 .idea/*
 *.iml
+*.DS_Store
+vendor/
+.bundle/
+build/
+.idea
+.gradle
+lib/logstash-output-s3_jars.rb

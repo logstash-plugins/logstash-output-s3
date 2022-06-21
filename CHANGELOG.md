@@ -1,3 +1,6 @@
+## 4.3.7
+- TBD
+
 ## 4.3.6
   - Docs: more documentation on restore + temp dir [#236](https://github.com/logstash-plugins/logstash-output-s3/pull/236)
     * minor logging improvements - use the same path: naming convention
