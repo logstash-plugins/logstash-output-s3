@@ -13,6 +13,8 @@ require "set"
 require "pathname"
 require "aws-sdk"
 require "logstash/outputs/s3/patch"
+require "zlib"
+require "open3"
 
 Aws.eager_autoload!
 
@@ -239,6 +241,34 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     start_periodic_check if @rotation.needs_periodic?
   end
 
+  def restore_corrupted_gzip_file
+    cmd = "/Users/mashhur/Dev/elastic/logstash/logstash-plugins/logstash-output-s3/gzrecover /Users/mashhur/Dev/elastic/logstash/data/corrupted.txt.gz"
+    status = Open3.capture2(cmd)
+    puts status
+  end
+
+  def test_corrupted_data
+    #fd = TemporaryFileFactory::IOWrappedGzip.new()
+    puts "Reading temp content..."
+    corrupted_file = "/Users/mashhur/Dev/elastic/logstash/data/corrupted.txt.gz"
+    restored_file = "/Users/mashhur/Dev/elastic/logstash/data/restored.txt.gz"
+    #fd_read = ::File.open(corrupted_file, 'r')
+    #fd_write = ::File.open(restored_file, TemporaryFileFactory::FILE_MODE)
+
+    Zlib::GzipReader.open(corrupted_file) {|gz|
+      gz.each_byte do | l |
+        puts l
+      end
+    }
+
+    Zlib::GzipWriter.open(restored_file) do |gz|
+      gz.write IO.binread(corrupted_file, 298)
+    end
+
+    #fd_read.close
+    #fd_write.close
+  end
+
   def multi_receive_encoded(events_and_encoded)
     prefix_written_to = Set.new
 
@@ -369,7 +399,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     # if the queue is full the calling thread will be used to upload
     temp_file.close # make sure the content is on disk
     if temp_file.size > 0
-      @uploader.upload_async(temp_file,
+      @uploader.upload_async(temp_file, @encoding,
                              :on_complete => method(:clean_temporary_file),
                              :upload_options => upload_options )
     end
@@ -398,13 +428,19 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
     temp_folder_path = Pathname.new(@temporary_directory)
     Dir.glob(::File.join(@temporary_directory, "**/*"))
-      .select { |file| ::File.file?(file) }
-      .each do |file|
-      temp_file = TemporaryFile.create_from_existing_file(file, temp_folder_path)
+      .select { |file_path| ::File.file?(file_path) }
+      .each do |file_path|
+      temp_file = TemporaryFile.create_from_existing_file(file_path, temp_folder_path)
       if temp_file.size > 0
+        puts "Recovering from crash and uploading...."
+        puts "Size of the recovery file: #{temp_file.size}"
         @logger.debug? && @logger.debug("Recovering from crash and uploading", :path => temp_file.path)
-        @crash_uploader.upload_async(temp_file, :on_complete => method(:clean_temporary_file), :upload_options => upload_options)
+        # need a file recovery logic
+        @crash_uploader.upload_async(temp_file, @encoding,
+                                     :on_complete => method(:clean_temporary_file),
+                                     :upload_options => upload_options)
       else
+        puts "Removing the temp file: #{temp_file}"
         clean_temporary_file(temp_file)
       end
     end

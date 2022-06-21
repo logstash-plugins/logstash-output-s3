@@ -1,3 +1,6 @@
+## 4.3.8
+  - Logstash recovers corrupted gzip and uploads to S3 [#249](https://github.com/logstash-plugins/logstash-output-s3/pull/249)
+
 ## 4.3.7
   - Refactor: avoid usage of CHM (JRuby 9.3.4 work-around) [#248](https://github.com/logstash-plugins/logstash-output-s3/pull/248)
 
