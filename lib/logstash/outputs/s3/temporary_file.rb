@@ -8,22 +8,26 @@ module LogStash
   module Outputs
     class S3
 
-      java_import 'org.logstash.outputs.s3.GzipRecover'
+      java_import 'org.logstash.plugins.outputs.s3.GzipUtil'
 
       # Wrap the actual file descriptor into an utility class
       # Make it more OOP and easier to reason with the paths.
       class TemporaryFile
         extend Forwardable
 
+        GZIP_EXTENSION = ".txt.gz"
+        TXT_EXTENSION = ".txt"
+        RECOVERED_FILE_NAMING = "-recovered"
+
         def_delegators :@fd, :path, :write, :close, :fsync
 
         attr_reader :fd
 
-        def initialize(key, fd, temp_path, created_at = Time.now)
+        def initialize(key, fd, temp_path)
           @fd = fd
           @key = key
           @temp_path = temp_path
-          @created_at = created_at
+          @created_at = Time.now
         end
 
         def ctime
@@ -65,12 +69,22 @@ module LogStash
         def self.create_from_existing_file(file_path, temporary_folder)
           key_parts = Pathname.new(file_path).relative_path_from(temporary_folder).to_s.split(::File::SEPARATOR)
 
-          puts "File path: #{file_path}"
-          GzipRecover.decompressGzip("", "")
-
+          # recover gzip file and compress back before uploading to S3
+          if file_path.end_with?(GZIP_EXTENSION)
+            file_path = self.recover(file_path)
+          end
           TemporaryFile.new(key_parts.slice(1, key_parts.size).join("/"),
                          ::File.open(file_path, "r"),
                          ::File.join(temporary_folder, key_parts.slice(0, 1)))
+        end
+
+        private
+        def self.recover(file_path)
+          recovered_txt_file_path = file_path.gsub(GZIP_EXTENSION, RECOVERED_FILE_NAMING + TXT_EXTENSION)
+          recovered_gzip_file_path = file_path.gsub(GZIP_EXTENSION, RECOVERED_FILE_NAMING + GZIP_EXTENSION)
+          GzipUtil.recover(file_path, recovered_txt_file_path)
+          GzipUtil.compress(recovered_txt_file_path, recovered_gzip_file_path)
+          recovered_gzip_file_path
         end
       end
     end

@@ -15,9 +15,6 @@ module LogStash
                                                                   :fallback_policy => :caller_runs
                                                                 })
 
-        GZIP_ENCODING = "gzip"
-        GZIP_EXTENSION = ".gz"
-
         attr_reader :bucket, :upload_options, :logger
 
         def initialize(bucket, logger, threadpool = DEFAULT_THREADPOOL, retry_count: Float::INFINITY, retry_delay: 1)
@@ -28,12 +25,8 @@ module LogStash
           @retry_delay = retry_delay
         end
 
-        def upload_async(file, encoding, options = {})
+        def upload_async(file, options = {})
           @workers_pool.post do
-            # uploading_file = encoding == GZIP_ENCODING ? encode_file(file) : file
-            # LogStash::Util.set_thread_name("S3 output uploader, file: #{uploading_file.path}")
-            # upload(uploading_file, options)
-
             LogStash::Util.set_thread_name("S3 output uploader, file: #{file.path}")
             upload(file, options)
           end
@@ -78,15 +71,6 @@ module LogStash
           @workers_pool.wait_for_termination(nil) # block until its done
         end
 
-        def encode_file(file)
-          path = file.path.concat(GZIP_EXTENSION)
-          Zlib::GzipWriter.open(path) do |gz|
-            gz.mtime = file.ctime
-            gz.write IO.binread(file.path)
-          end
-
-          TemporaryFile.new(file.key.concat(GZIP_EXTENSION), ::File.open(path, 'r'), file.temp_path, file.ctime)
-        end
       end
     end
   end
