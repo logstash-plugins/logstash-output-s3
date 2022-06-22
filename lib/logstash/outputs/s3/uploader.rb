@@ -1,7 +1,6 @@
 # encoding: utf-8
 require "logstash/util"
 require "aws-sdk"
-require "zlib"
 
 module LogStash
   module Outputs
