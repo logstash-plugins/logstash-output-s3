@@ -1,5 +1,5 @@
 ## 4.3.7
-- TBD
+  - Logstash recovers corrupted gzip and uploads to S3 [#249](https://github.com/logstash-plugins/logstash-output-s3/pull/249)
 
 ## 4.3.6
   - Docs: more documentation on restore + temp dir [#236](https://github.com/logstash-plugins/logstash-output-s3/pull/236)

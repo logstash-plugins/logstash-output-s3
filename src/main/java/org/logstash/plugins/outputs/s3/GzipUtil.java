@@ -3,7 +3,6 @@ package org.logstash.plugins.outputs.s3;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.zip.GZIPInputStream;
@@ -44,15 +43,15 @@ public class GzipUtil {
      * @param targetPath a path where target can be placed
      * Note: raises an IO exception other than GZIP dead blocks.
      */
-    public static void recover(String sourcePath, String targetSource) {
+    public static void recover(String sourcePath, String targetPath) {
         try {
-            GzipUtil.decompress(Paths.get(sourcePath), Paths.get(targetSource));
+            GzipUtil.decompress(Paths.get(sourcePath), Paths.get(targetPath));
         } catch (IOException exception) {
             // raise an exception if expected exception is not end of ZLIB related.
             if (CORRUPTED_FILE_ERROR.equals(exception.getMessage()) == false) {
                 logger.error("Error occurred while compressing the file, error={}", exception.getMessage());
             } else {
-                logger.warn("Corrupted file recovered, path:" + targetSource);
+                logger.warn("Corrupted file recovered, path:" + targetPath);
             }
         }
     }
@@ -63,9 +62,9 @@ public class GzipUtil {
      * @param targetPath a path where target can be placed
      * Note: raises an IO exception if any break happens.
      */
-    public static void decompress(String sourcePath, String targetSource) {
+    public static void decompress(String sourcePath, String targetPath) {
         try {
-            GzipUtil.decompress(Paths.get(sourcePath), Paths.get(targetSource));
+            GzipUtil.decompress(Paths.get(sourcePath), Paths.get(targetPath));
         } catch (IOException exception) {
             logger.error("Error occurred while decompressing the file, error={}", exception.getMessage());
         }
