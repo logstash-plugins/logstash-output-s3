@@ -13,9 +13,6 @@ description = "A Logstash plugin uploads events to Amazon Simple Storage Service
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-String jacksonVersion = '2.9.10'
-String jacksonDatabindVersion = '2.9.10.8'
-
 repositories {
     mavenCentral()
 }

@@ -27,7 +27,7 @@ public class GzipUtil {
      * Compresses a given non-compressed source file into compressed target file.
      * @param sourcePath a path where source is located
      * @param targetPath a path where target can be placed
-     * Note: raises an IO exception if any break happens.
+     * Note: logs an IO exception if any break happens.
      */
     public static void compress(String sourcePath, String targetPath) {
         try {
@@ -41,13 +41,13 @@ public class GzipUtil {
      * Decompresses and recovers corrupted GZIP file into target file.
      * @param sourcePath a path where corrupted GZIP is located
      * @param targetPath a path where target can be placed
-     * Note: raises an IO exception other than GZIP dead blocks.
+     * Note: logs an IO exception other than GZIP dead blocks.
      */
     public static void recover(String sourcePath, String targetPath) {
         try {
             GzipUtil.decompress(Paths.get(sourcePath), Paths.get(targetPath));
         } catch (IOException exception) {
-            // raise an exception if expected exception is not end of ZLIB related.
+            // log an exception if expected exception is not end of ZLIB related.
             if (CORRUPTED_FILE_ERROR.equals(exception.getMessage()) == false) {
                 logger.error("Error occurred while compressing the file, error={}", exception.getMessage());
             } else {
@@ -60,7 +60,7 @@ public class GzipUtil {
      * Decompresses a given compressed source file into target file.
      * @param sourcePath a path where compressed source is located
      * @param targetPath a path where target can be placed
-     * Note: raises an IO exception if any break happens.
+     * Note: logs an IO exception if any break happens.
      */
     public static void decompress(String sourcePath, String targetPath) {
         try {
