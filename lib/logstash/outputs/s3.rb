@@ -97,6 +97,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
                                                                    :fallback_policy => :caller_runs
                                                                  })
 
+  GZIP_ENCODING = "gzip"
 
   config_name "s3"
   default :codec, "line"
@@ -181,7 +182,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   config :tags, :validate => :array, :default => []
 
   # Specify the content encoding. Supports ("gzip"). Defaults to "none"
-  config :encoding, :validate => ["none", "gzip"], :default => "none"
+  config :encoding, :validate => ["none", GZIP_ENCODING], :default => "none"
 
   # Define the strategy to use to decide when we need to rotate the file and push it to S3,
   # The default strategy is to check for both size and time, the first one to match will rotate the file.
@@ -315,7 +316,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       :server_side_encryption => @server_side_encryption ? @server_side_encryption_algorithm : nil,
       :ssekms_key_id => @server_side_encryption_algorithm == "aws:kms" ? @ssekms_key_id : nil,
       :storage_class => @storage_class,
-      :content_encoding => @encoding == "gzip" ? "gzip" : nil,
+      :content_encoding => @encoding == GZIP_ENCODING ? GZIP_ENCODING : nil,
       :multipart_threshold => @upload_multipart_threshold
     }
   end
@@ -406,7 +407,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
         @crash_uploader.upload_async(temp_file,
                                      :on_complete => method(:clean_temporary_file),
                                      :upload_options => upload_options)
-      else
+      end
+      if @encoding != GZIP_ENCODING && temp_file.size != 0
         clean_temporary_file(temp_file)
       end
     end
