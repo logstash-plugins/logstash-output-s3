@@ -398,19 +398,43 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     @crash_uploader = Uploader.new(bucket_resource, @logger, CRASH_RECOVERY_THREADPOOL)
 
     temp_folder_path = Pathname.new(@temporary_directory)
-    Dir.glob(::File.join(@temporary_directory, "**/*"))
-      .select { |file_path| ::File.file?(file_path) }
-      .each do |file_path|
-      temp_file = TemporaryFile.create_from_existing_file(file_path, temp_folder_path)
-      if temp_file.size > 0
-        @logger.debug? && @logger.debug("Recovering from crash and uploading", :path => temp_file.path)
-        @crash_uploader.upload_async(temp_file,
-                                     :on_complete => method(:clean_temporary_file),
-                                     :upload_options => upload_options)
-      end
-      if @encoding != GZIP_ENCODING && temp_file.size != 0
-        clean_temporary_file(temp_file)
+
+    files = Dir.glob(::File.join(@temporary_directory, "**/*"))
+               .select { |file_path| ::File.file?(file_path) }
+    under_recovery_files = get_under_recovery_files(files)
+
+    files.each do |file_path|
+      # if already recovering or recovered and uploading to S3, skip the files
+      unless under_recovery_files.include?(file_path)
+        temp_file = TemporaryFile.create_from_existing_file(file_path, temp_folder_path)
+        if temp_file.size > 0
+          @logger.debug? && @logger.debug("Recovering from crash and uploading", :path => temp_file.path)
+          @crash_uploader.upload_async(temp_file,
+                                       :on_complete => method(:clean_temporary_file),
+                                       :upload_options => upload_options)
+        end
+        if @encoding != GZIP_ENCODING && temp_file.size != 0
+          clean_temporary_file(temp_file)
+        end
       end
     end
+  end
+
+  # figures out the recovering files and
+  # creates a skip list to ignore for the rest of processes
+  def get_under_recovery_files(files)
+    skip_files = Set.new
+    return skip_files unless @encoding == GZIP_ENCODING
+
+    files.each do |file_path|
+      if file_path.include?(TemporaryFile.recovery_file_name_tag)
+        skip_files << file_path
+        if file_path.include?(TemporaryFile.gzip_extension)
+          # also include the original corrupted gzip file
+          skip_files << file_path.gsub(TemporaryFile.recovery_file_name_tag, "")
+        end
+      end
+    end
+    skip_files
   end
 end

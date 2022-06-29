@@ -19,9 +19,6 @@ module LogStash
       # I do not have to mess around to check if the other directory have file in it before destroying them.
       class TemporaryFileFactory
         FILE_MODE = "a"
-        GZIP_ENCODING = "gzip"
-        GZIP_EXTENSION = "txt.gz"
-        TXT_EXTENSION = "txt"
         STRFTIME = "%Y-%m-%dT%H.%M"
 
         attr_accessor :counter, :tags, :prefix, :encoding, :temporary_directory, :current
@@ -48,7 +45,7 @@ module LogStash
 
         private
         def extension
-          gzip? ? GZIP_EXTENSION : TXT_EXTENSION
+          gzip? ? TemporaryFile.gzip_extension : TemporaryFile.text_extension
         end
 
         def gzip?

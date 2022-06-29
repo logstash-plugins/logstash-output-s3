@@ -15,9 +15,9 @@ module LogStash
       class TemporaryFile
         extend Forwardable
 
-        GZIP_EXTENSION = ".txt.gz"
-        TXT_EXTENSION = ".txt"
-        RECOVERED_FILE_NAMING = "-recovered"
+        GZIP_EXTENSION = "txt.gz"
+        TXT_EXTENSION = "txt"
+        RECOVERED_FILE_NAME_TAG = "-recovered"
 
         def_delegators :@fd, :path, :write, :close, :fsync
 
@@ -70,7 +70,7 @@ module LogStash
           key_parts = Pathname.new(file_path).relative_path_from(temporary_folder).to_s.split(::File::SEPARATOR)
 
           # recover gzip file and compress back before uploading to S3
-          if file_path.end_with?(GZIP_EXTENSION)
+          if file_path.end_with?("." + GZIP_EXTENSION)
             file_path = self.recover(file_path)
           end
           TemporaryFile.new(key_parts.slice(1, key_parts.size).join("/"),
@@ -78,10 +78,23 @@ module LogStash
                          ::File.join(temporary_folder, key_parts.slice(0, 1)))
         end
 
+        def self.gzip_extension
+          GZIP_EXTENSION
+        end
+
+        def self.text_extension
+          TXT_EXTENSION
+        end
+
+        def self.recovery_file_name_tag
+          RECOVERED_FILE_NAME_TAG
+        end
+
         private
         def self.recover(file_path)
-          recovered_txt_file_path = file_path.gsub(GZIP_EXTENSION, RECOVERED_FILE_NAMING + TXT_EXTENSION)
-          recovered_gzip_file_path = file_path.gsub(GZIP_EXTENSION, RECOVERED_FILE_NAMING + GZIP_EXTENSION)
+          full_gzip_extension = "." + GZIP_EXTENSION
+          recovered_txt_file_path = file_path.gsub(full_gzip_extension, RECOVERED_FILE_NAME_TAG + "." + TXT_EXTENSION)
+          recovered_gzip_file_path = file_path.gsub(full_gzip_extension, RECOVERED_FILE_NAME_TAG + full_gzip_extension)
           GzipUtil.recover(file_path, recovered_txt_file_path)
           GzipUtil.compress(recovered_txt_file_path, recovered_gzip_file_path)
           recovered_gzip_file_path
