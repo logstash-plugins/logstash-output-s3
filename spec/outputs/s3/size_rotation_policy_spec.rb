@@ -25,11 +25,11 @@ describe LogStash::Outputs::S3::SizeRotationPolicy do
   end
 
   it "raises an exception if the `size_file` is 0" do
-    expect { described_class.new(0) }.to raise_error(LogStash::ConfigurationError, /need to be greather than 0/)
+    expect { described_class.new(0) }.to raise_error(LogStash::ConfigurationError, /need to be greater than 0/)
   end
 
   it "raises an exception if the `size_file` is < 0" do
-    expect { described_class.new(-100) }.to raise_error(LogStash::ConfigurationError, /need to be greather than 0/)
+    expect { described_class.new(-100) }.to raise_error(LogStash::ConfigurationError, /need to be greater than 0/)
   end
 
   context "#needs_periodic?" do
