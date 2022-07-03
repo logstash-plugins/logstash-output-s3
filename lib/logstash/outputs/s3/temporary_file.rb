@@ -74,7 +74,7 @@ module LogStash
             file_path = self.recover(file_path)
           end
           TemporaryFile.new(key_parts.slice(1, key_parts.size).join("/"),
-                         ::File.open(file_path, "r"),
+                         ::File.exist?(file_path) ? ::File.open(file_path, "r") : nil, # for the nil case, file size will be 0 and upload will be ignored.
                          ::File.join(temporary_folder, key_parts.slice(0, 1)))
         end
 
@@ -96,7 +96,9 @@ module LogStash
           recovered_txt_file_path = file_path.gsub(full_gzip_extension, RECOVERED_FILE_NAME_TAG + "." + TXT_EXTENSION)
           recovered_gzip_file_path = file_path.gsub(full_gzip_extension, RECOVERED_FILE_NAME_TAG + full_gzip_extension)
           GzipUtil.recover(file_path, recovered_txt_file_path)
-          GzipUtil.compress(recovered_txt_file_path, recovered_gzip_file_path)
+          if ::File.exist?(recovered_txt_file_path) && !::File.zero?(recovered_txt_file_path)
+            GzipUtil.compress(recovered_txt_file_path, recovered_gzip_file_path)
+          end
           recovered_gzip_file_path
         end
       end
