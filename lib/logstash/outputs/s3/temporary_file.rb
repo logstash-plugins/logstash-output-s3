@@ -43,6 +43,8 @@ module LogStash
           # so we dont have to deal with fsync
           # if the file is close, fd.size raises an IO exception so we use the File::size
           begin
+            # fd is nil when LS tries to recover gzip file but fails
+            return 0 unless @fd != nil
             @fd.size
           rescue IOError
             ::File.size(path)

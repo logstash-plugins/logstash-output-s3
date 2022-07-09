@@ -404,8 +404,12 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     under_recovery_files = get_under_recovery_files(files)
 
     files.each do |file_path|
-      # if already recovering or recovered and uploading to S3, skip the files
-      unless under_recovery_files.include?(file_path)
+      # when encoding is GZIP, if file is already recovering or recovered and uploading to S3, log and skip
+      if under_recovery_files.include?(file_path)
+        unless file_path.include?(TemporaryFile.gzip_extension)
+          @logger.warn("The #{file_path} file either under recover process or failed to recover before.")
+        end
+      else
         temp_file = TemporaryFile.create_from_existing_file(file_path, temp_folder_path)
         if temp_file.size > 0
           @logger.debug? && @logger.debug("Recovering from crash and uploading", :path => temp_file.path)
@@ -413,6 +417,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
                                        :on_complete => method(:clean_temporary_file),
                                        :upload_options => upload_options)
         end
+        # do not remove if Logstash tries to recover but fails
         if @encoding != GZIP_ENCODING && temp_file.size != 0
           clean_temporary_file(temp_file)
         end
