@@ -68,6 +68,11 @@ module LogStash
           size == 0
         end
 
+        # only to cover the case where LS cannot restore corrupted file, file is not exist
+        def recoverable?
+          !@fd.nil?
+        end
+
         def self.create_from_existing_file(file_path, temporary_folder)
           key_parts = Pathname.new(file_path).relative_path_from(temporary_folder).to_s.split(::File::SEPARATOR)
 

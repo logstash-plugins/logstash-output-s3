@@ -398,7 +398,6 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     @crash_uploader = Uploader.new(bucket_resource, @logger, CRASH_RECOVERY_THREADPOOL)
 
     temp_folder_path = Pathname.new(@temporary_directory)
-
     files = Dir.glob(::File.join(@temporary_directory, "**/*"))
                .select { |file_path| ::File.file?(file_path) }
     under_recovery_files = get_under_recovery_files(files)
@@ -411,15 +410,16 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
         end
       else
         temp_file = TemporaryFile.create_from_existing_file(file_path, temp_folder_path)
-        if temp_file.size > 0
-          @logger.debug? && @logger.debug("Recovering from crash and uploading", :path => temp_file.path)
-          @crash_uploader.upload_async(temp_file,
-                                       :on_complete => method(:clean_temporary_file),
-                                       :upload_options => upload_options)
-        end
-        # do not remove if Logstash tries to recover but fails
-        if @encoding != GZIP_ENCODING && temp_file.size != 0
-          clean_temporary_file(temp_file)
+        # do not remove or upload if Logstash tries to recover file but fails
+        if temp_file.recoverable?
+          if temp_file.size > 0
+            @logger.debug? && @logger.debug("Recovering from crash and uploading", :path => temp_file.path)
+            @crash_uploader.upload_async(temp_file,
+                                         :on_complete => method(:clean_temporary_file),
+                                         :upload_options => upload_options)
+          else
+            clean_temporary_file(temp_file)
+          end
         end
       end
     end
