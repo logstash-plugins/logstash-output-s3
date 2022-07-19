@@ -1,4 +1,4 @@
-## 4.3.8
+## 4.4.0
   - Logstash recovers corrupted gzip and uploads to S3 [#249](https://github.com/logstash-plugins/logstash-output-s3/pull/249)
 
 ## 4.3.7
