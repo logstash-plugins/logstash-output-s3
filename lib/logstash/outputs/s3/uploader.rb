@@ -31,6 +31,7 @@ module LogStash
           end
         end
 
+        # uploads a TemporaryFile to S3
         def upload(file, options = {})
           upload_options = options.fetch(:upload_options, {})
 
@@ -68,6 +69,7 @@ module LogStash
           @workers_pool.shutdown
           @workers_pool.wait_for_termination(nil) # block until its done
         end
+
       end
     end
   end

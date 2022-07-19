@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.authors         = ["Elastic"]
   s.email           = 'info@elastic.co'
   s.homepage        = "http://www.elastic.co/guide/en/logstash/current/index.html"
-  s.require_paths = ["lib"]
+  s.require_paths = ["lib", "vendor/jar-dependencies"]
 
   # Files
   s.files = Dir["lib/**/*","spec/**/*","*.gemspec","*.md","CONTRIBUTORS","Gemfile","LICENSE","NOTICE.TXT", "vendor/jar-dependencies/**/*.jar", "vendor/jar-dependencies/**/*.rb", "VERSION", "docs/**/*"]

@@ -5,6 +5,7 @@ shared_context "setup plugin" do
   let(:bucket) { ENV["AWS_LOGSTASH_TEST_BUCKET"] }
   let(:access_key_id) {  ENV["AWS_ACCESS_KEY_ID"] }
   let(:secret_access_key) { ENV["AWS_SECRET_ACCESS_KEY"] }
+  let(:session_token) { ENV["AWS_SESSION_TOKEN"] }
   let(:size_file) { 100 }
   let(:time_file) { 100 }
   let(:tags) { [] }
@@ -18,6 +19,7 @@ shared_context "setup plugin" do
       "temporary_directory" => temporary_directory,
       "access_key_id" => access_key_id,
       "secret_access_key" => secret_access_key,
+      "session_token" => session_token,
       "size_file" => size_file,
       "time_file" => time_file,
       "region" => region,
@@ -25,7 +27,7 @@ shared_context "setup plugin" do
     }
   end
 
-  let(:client_credentials) { Aws::Credentials.new(access_key_id, secret_access_key) }
+  let(:client_credentials) { Aws::Credentials.new(access_key_id, secret_access_key, session_token) }
   let(:bucket_resource) { Aws::S3::Bucket.new(bucket, { :credentials => client_credentials, :region => region }) }
 
   subject { LogStash::Outputs::S3.new(options) }

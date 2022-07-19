@@ -97,6 +97,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
                                                                    :fallback_policy => :caller_runs
                                                                  })
 
+  GZIP_ENCODING = "gzip"
 
   config_name "s3"
   default :codec, "line"
@@ -181,7 +182,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   config :tags, :validate => :array, :default => []
 
   # Specify the content encoding. Supports ("gzip"). Defaults to "none"
-  config :encoding, :validate => ["none", "gzip"], :default => "none"
+  config :encoding, :validate => ["none", GZIP_ENCODING], :default => "none"
 
   # Define the strategy to use to decide when we need to rotate the file and push it to S3,
   # The default strategy is to check for both size and time, the first one to match will rotate the file.
@@ -315,7 +316,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
       :server_side_encryption => @server_side_encryption ? @server_side_encryption_algorithm : nil,
       :ssekms_key_id => @server_side_encryption_algorithm == "aws:kms" ? @ssekms_key_id : nil,
       :storage_class => @storage_class,
-      :content_encoding => @encoding == "gzip" ? "gzip" : nil,
+      :content_encoding => @encoding == GZIP_ENCODING ? GZIP_ENCODING : nil,
       :multipart_threshold => @upload_multipart_threshold
     }
   end
@@ -397,16 +398,48 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     @crash_uploader = Uploader.new(bucket_resource, @logger, CRASH_RECOVERY_THREADPOOL)
 
     temp_folder_path = Pathname.new(@temporary_directory)
-    Dir.glob(::File.join(@temporary_directory, "**/*"))
-      .select { |file| ::File.file?(file) }
-      .each do |file|
-      temp_file = TemporaryFile.create_from_existing_file(file, temp_folder_path)
-      if temp_file.size > 0
-        @logger.debug? && @logger.debug("Recovering from crash and uploading", :path => temp_file.path)
-        @crash_uploader.upload_async(temp_file, :on_complete => method(:clean_temporary_file), :upload_options => upload_options)
+    files = Dir.glob(::File.join(@temporary_directory, "**/*"))
+               .select { |file_path| ::File.file?(file_path) }
+    under_recovery_files = get_under_recovery_files(files)
+
+    files.each do |file_path|
+      # when encoding is GZIP, if file is already recovering or recovered and uploading to S3, log and skip
+      if under_recovery_files.include?(file_path)
+        unless file_path.include?(TemporaryFile.gzip_extension)
+          @logger.warn("The #{file_path} file either under recover process or failed to recover before.")
+        end
       else
-        clean_temporary_file(temp_file)
+        temp_file = TemporaryFile.create_from_existing_file(file_path, temp_folder_path)
+        # do not remove or upload if Logstash tries to recover file but fails
+        if temp_file.recoverable?
+          if temp_file.size > 0
+            @logger.debug? && @logger.debug("Recovering from crash and uploading", :path => temp_file.path)
+            @crash_uploader.upload_async(temp_file,
+                                         :on_complete => method(:clean_temporary_file),
+                                         :upload_options => upload_options)
+          else
+            clean_temporary_file(temp_file)
+          end
+        end
       end
     end
+  end
+
+  # figures out the recovering files and
+  # creates a skip list to ignore for the rest of processes
+  def get_under_recovery_files(files)
+    skip_files = Set.new
+    return skip_files unless @encoding == GZIP_ENCODING
+
+    files.each do |file_path|
+      if file_path.include?(TemporaryFile.recovery_file_name_tag)
+        skip_files << file_path
+        if file_path.include?(TemporaryFile.gzip_extension)
+          # also include the original corrupted gzip file
+          skip_files << file_path.gsub(TemporaryFile.recovery_file_name_tag, "")
+        end
+      end
+    end
+    skip_files
   end
 end
