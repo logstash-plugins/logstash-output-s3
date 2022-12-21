@@ -344,22 +344,22 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   end
 
   def rotate_if_needed(prefixes)
-    prefixes.each do |prefix|
-      # Each file access is thread safe,
-      # until the rotation is done then only
-      # one thread has access to the resource.
-      @file_repository.get_factory(prefix) do |factory|
-        temp_file = factory.current
+    # Each file access is thread safe,
+    # until the rotation is done then only
+    # one thread has access to the resource.
+    @file_repository.each_factory(prefixes) do |factory|
+      # we have exclusive access to the one-and-only
+      # prefix WRAPPER for this factory.
+      temp_file = factory.current
 
-        if @rotation.rotate?(temp_file)
-          @logger.debug? && @logger.debug("Rotate file",
-                                          :key => temp_file.key,
-                                          :path => temp_file.path,
-                                          :strategy => @rotation.class.name)
+      if @rotation.rotate?(temp_file)
+        @logger.debug? && @logger.debug("Rotate file",
+                                        :key => temp_file.key,
+                                        :path => temp_file.path,
+                                        :strategy => @rotation.class.name)
 
-          upload_file(temp_file)
-          factory.rotate!
-        end
+        upload_file(temp_file) # may be async or blocking
+        factory.rotate!
       end
     end
   end
