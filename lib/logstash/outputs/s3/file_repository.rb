@@ -80,10 +80,6 @@ module LogStash
         # Return the file factory
         def get_factory(prefix_key)
           prefix_val = @prefixed_factories.compute_if_absent(prefix_key) { @factory_initializer.create_value(prefix_key) }
-          if prefix_val == nil
-            prefix_val = @prefixed_factories.fetch(prefix_key)
-          end
-
           prefix_val.with_lock { |factory| yield factory }
         end
 
@@ -100,11 +96,9 @@ module LogStash
         end
 
         def remove_stale(k, v)
-          v.with_lock do |_|
-            if v.stale?
-              @prefixed_factories.remove(k, v)
-              v.delete!
-            end
+          if v.stale?
+            @prefixed_factories.delete_pair(k, v)
+            v.delete!
           end
         end
 
