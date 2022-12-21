@@ -1,3 +1,6 @@
+## 4.4.1
+  - Fix: no file or directory issue when file stealer removes the file but plugin tries to upload file when closing [#](https://github.com/logstash-plugins/logstash-output-s3/pull/)
+
 ## 4.4.0
   - Logstash recovers corrupted gzip and uploads to S3 [#249](https://github.com/logstash-plugins/logstash-output-s3/pull/249)
 
