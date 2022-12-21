@@ -72,14 +72,14 @@ module LogStash
         end
 
         def each_files
-          @prefixed_factories.values.each do |prefixed_file|
-            prefixed_file.with_lock { |factory| yield factory.current }
+          @prefixed_factories.keys.each do |prefixed_file|
+            get_file(prefixed_file) { |current| yield current }
           end
         end
 
         # Return the file factory
         def get_factory(prefix_key)
-          prefix_val = @prefixed_factories.fetch_or_store(prefix_key) { @factory_initializer.create_value(prefix_key) }
+          prefix_val = @prefixed_factories.compute_if_present(prefix_key) { @factory_initializer.create_value(prefix_key) }
           prefix_val.with_lock { |factory| yield factory }
         end
 
@@ -96,9 +96,11 @@ module LogStash
         end
 
         def remove_stale(k, v)
-          if v.stale?
-            @prefixed_factories.delete_pair(k, v)
-            v.delete!
+          v.with_lock do |_|
+            if v.stale?
+              @prefixed_factories.remove(k, v)
+              v.delete!
+            end
           end
         end
 
