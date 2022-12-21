@@ -266,6 +266,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
     @logger.debug("Uploading current workspace")
 
+    @file_repository.shutdown # stop stale sweeps
+
     # The plugin has stopped receiving new events, but we still have
     # data on disk, lets make sure it get to S3.
     # If Logstash get interrupted, the `restore_from_crash` (when set to true) method will pickup
@@ -274,8 +276,6 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     @file_repository.each_files do |file|
       upload_file(file)
     end
-
-    @file_repository.shutdown
 
     @uploader.stop # wait until all the current upload are complete
     @crash_uploader.stop if @restore # we might have still work to do for recovery so wait until we are done
