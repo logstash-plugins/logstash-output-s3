@@ -13,6 +13,9 @@ module LogStash
         # Ensure that all access or work done
         # on a factory is threadsafe
         class PrefixedValue
+
+          attr_reader :stale_time
+
           def initialize(file_factory, stale_time)
             @file_factory = file_factory
             @lock = Mutex.new
@@ -96,9 +99,12 @@ module LogStash
         end
 
         def remove_stale(k, v)
-          if v.stale?
-            @prefixed_factories.delete_pair(k, v)
-            v.delete!
+          stale_time = v.stale_time
+          v.with_lock do |factory|
+            if factory.current.size == 0 && (Time.now - factory.current.ctime) > stale_time
+              @prefixed_factories.delete(k)
+              factory.current.delete!
+            end
           end
         end
 
