@@ -266,6 +266,8 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
 
     @logger.debug("Uploading current workspace")
 
+    @file_repository.shutdown # stop stale sweeps
+
     # The plugin has stopped receiving new events, but we still have
     # data on disk, lets make sure it get to S3.
     # If Logstash get interrupted, the `restore_from_crash` (when set to true) method will pickup
@@ -274,8 +276,6 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
     @file_repository.each_files do |file|
       upload_file(file)
     end
-
-    @file_repository.shutdown
 
     @uploader.stop # wait until all the current upload are complete
     @crash_uploader.stop if @restore # we might have still work to do for recovery so wait until we are done
@@ -344,22 +344,22 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   end
 
   def rotate_if_needed(prefixes)
-    prefixes.each do |prefix|
-      # Each file access is thread safe,
-      # until the rotation is done then only
-      # one thread has access to the resource.
-      @file_repository.get_factory(prefix) do |factory|
-        temp_file = factory.current
+    # Each file access is thread safe,
+    # until the rotation is done then only
+    # one thread has access to the resource.
+    @file_repository.each_factory(prefixes) do |factory|
+      # we have exclusive access to the one-and-only
+      # prefix WRAPPER for this factory.
+      temp_file = factory.current
 
-        if @rotation.rotate?(temp_file)
-          @logger.debug? && @logger.debug("Rotate file",
-                                          :key => temp_file.key,
-                                          :path => temp_file.path,
-                                          :strategy => @rotation.class.name)
+      if @rotation.rotate?(temp_file)
+        @logger.debug? && @logger.debug("Rotate file",
+                                        :key => temp_file.key,
+                                        :path => temp_file.path,
+                                        :strategy => @rotation.class.name)
 
-          upload_file(temp_file)
-          factory.rotate!
-        end
+        upload_file(temp_file) # may be async or blocking
+        factory.rotate!
       end
     end
   end
