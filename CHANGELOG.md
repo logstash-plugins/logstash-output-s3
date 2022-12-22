@@ -1,5 +1,5 @@
 ## 4.4.1
-  - Fixes several closely-related race conditions that could cause plugin crashes or data-loss
+  - Fixes several closely-related race conditions that could cause plugin crashes or data-loss [#252](https://github.com/logstash-plugins/logstash-output-s3/pull/252)
     - race condition in initializing a prefix could cause one or more local temp files to be abandoned and only recovered after next pipeline start
     - race condition in stale watcher could cause the plugin to crash when working with a stale (empty) file that had been deleted
     - race condition in stale watcher could cause a non-empty file to be deleted if bytes were written to it after it was detected as stale
