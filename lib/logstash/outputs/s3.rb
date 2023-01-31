@@ -395,7 +395,7 @@ class LogStash::Outputs::S3 < LogStash::Outputs::Base
   # The upload process will use a separate uploader/threadpool with less resource allocated to it.
   # but it will use an unbounded queue for the work, it may take some time before all the older files get processed.
   def restore_from_crash
-    @crash_uploader = Uploader.new(bucket_resource, @logger, CRASH_RECOVERY_THREADPOOL)
+    @crash_uploader = Uploader.new(bucket_resource, @logger, CRASH_RECOVERY_THREADPOOL, retry_count: @retry_count, retry_delay: @retry_delay)
 
     temp_folder_path = Pathname.new(@temporary_directory)
     files = Dir.glob(::File.join(@temporary_directory, "**/*"))
