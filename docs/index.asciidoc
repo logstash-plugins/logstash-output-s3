@@ -104,7 +104,7 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 | <<plugins-{type}s-{plugin}-server_side_encryption>> |<<boolean,boolean>>|No
 | <<plugins-{type}s-{plugin}-server_side_encryption_algorithm>> |<<string,string>>, one of `["AES256", "aws:kms"]`|No
 | <<plugins-{type}s-{plugin}-session_token>> |<<string,string>>|No
-| <<plugins-{type}s-{plugin}-signature_version>> |<<string,string>>, one of `["v2", "v4"]`|No
+| <<plugins-{type}s-{plugin}-signature_version>> |<<string,string>>, one of `["s3", "v4"]`|No
 | <<plugins-{type}s-{plugin}-size_file>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-ssekms_key_id>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-storage_class>> |<<string,string>>, one of `["STANDARD", "REDUCED_REDUNDANCY", "STANDARD_IA", "ONEZONE_IA"]`|No
