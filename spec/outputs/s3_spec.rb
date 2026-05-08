@@ -30,7 +30,7 @@ describe LogStash::Outputs::S3 do
   context "#register configuration validation" do
     describe "signature version" do
       it "should set the signature version if specified" do
-        ["v2", "v4"].each do |version|
+        ["s3", "v4"].each do |version|
           s3 = described_class.new(options.merge({ "signature_version" => version }))
           expect(s3.full_options).to include(:signature_version => version)
         end
