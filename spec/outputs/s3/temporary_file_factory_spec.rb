@@ -58,6 +58,18 @@ describe LogStash::Outputs::S3::TemporaryFileFactory do
       expect(subject.current.path).to include(uuid)
     end
 
+    context "with prefix contains /" do
+      subject { described_class.new('prefix/filename.ext', tags, encoding, temporary_directory) }
+      it "is initialized with filename" do
+        expect(subject.prefix).to eq('prefix/')
+        expect(subject.fname).to eq('filename.ext')
+      end
+      it "should return file name as current filename" do
+        file = subject.current
+        expect(file.path).to end_with "prefix/filename.ext"
+      end
+    end
+
     context "with tags supplied" do
       let(:tags) { ["secret", "service"] }
 
